@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Brainy – Your AI Study Buddy</title>
+<meta name="description" content="Ask questions, draw pictures, make flashcards and quizzes, and run science and maths labs with AI.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F5F0FF; --ink:#231A4F; --muted:#6B6390; --card:#fff;
+  --violet:#6C3BFF; --pink:#EE2D82; --amber:#FFA41B; --teal:#00BFA5; --blue:#2F6BFF; --red:#FF5A5F; --green:#2ECC71;
+  --bd:3px solid var(--ink); --sh:5px 5px 0 var(--ink);
+  --fd:'Fredoka','Trebuchet MS',system-ui,sans-serif;
+  --fb:'Nunito',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:var(--fb);font-weight:600;color:var(--ink);background:var(--bg);overflow:hidden;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font-family:inherit;color:inherit}
+:focus-visible{outline:3px dashed var(--ink);outline-offset:3px}
+[hidden]{display:none!important}
+
+/* animated backdrop */
+.bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.blob{position:absolute;border-radius:50%;filter:blur(60px);opacity:.55;animation:drift 22s ease-in-out infinite alternate}
+.b1{width:420px;height:420px;background:#C9B6FF;left:-80px;top:-60px}
+.b2{width:380px;height:380px;background:#FFC2DC;right:-60px;top:20%;animation-duration:26s}
+.b3{width:340px;height:340px;background:#A8F0E0;left:30%;bottom:-120px;animation-duration:30s}
+.b4{width:260px;height:260px;background:#FFE3A3;right:25%;top:-90px;animation-duration:19s}
+@keyframes drift{to{transform:translate(90px,60px) scale(1.15)}}
+
+.app{position:relative;z-index:1;display:grid;grid-template-columns:232px 1fr;height:100dvh}
+
+/* nav */
+.nav{padding:18px 14px;display:flex;flex-direction:column;gap:10px;border-right:var(--bd);background:rgba(255,255,255,.7);backdrop-filter:blur(6px)}
+.logo{display:flex;align-items:center;gap:10px;font:700 28px var(--fd);padding:2px 6px 12px}
+.logo svg{width:40px;height:40px;flex:none}
+.nav button{--c:var(--violet);display:flex;align-items:center;gap:12px;width:100%;text-align:left;font:600 18px var(--fd);padding:10px 12px;border:3px solid transparent;border-radius:14px;background:transparent;cursor:pointer;transition:transform .12s}
+.nav button i{font-style:normal;font-size:22px;width:34px;height:34px;display:grid;place-items:center;border-radius:10px;background:var(--c);border:2px solid var(--ink)}
+.nav button:hover{transform:translateX(3px)}
+.nav button.on{background:#fff;border-color:var(--ink);box-shadow:3px 3px 0 var(--ink)}
+.nav .sp{flex:1}
+@media (max-width:820px){
+  .app{grid-template-columns:1fr;grid-template-rows:1fr 66px}
+  .nav{order:2;flex-direction:row;padding:6px;gap:2px;border-right:0;border-top:var(--bd);justify-content:space-around}
+  .logo,.nav .sp{display:none}
+  .nav button{flex-direction:column;gap:2px;font-size:11px;padding:4px 2px;text-align:center;justify-content:center;width:auto;flex:1}
+  .nav button i{width:30px;height:30px;font-size:18px}
+  .nav button:hover{transform:none}
+}
+
+/* main */
+main{display:flex;flex-direction:column;min-height:0;min-width:0}
+#keybar{background:var(--amber);border-bottom:var(--bd);padding:8px 16px;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;font-weight:800}
+#keybar button{font:700 14px var(--fd);border:2px solid var(--ink);border-radius:10px;background:#fff;padding:4px 12px;cursor:pointer}
+#views{flex:1;min-height:0;position:relative;overflow:auto}
+.view{display:none;padding:26px 28px 40px;max-width:1080px;margin:0 auto;--a:var(--violet);--soft:#EBE3FF;--on:#fff}
+.view.on{display:block}
+#view-images{--a:var(--pink);--soft:#FFE0EE}
+#view-cards{--a:var(--amber);--soft:#FFF0CC;--on:var(--ink)}
+#view-quiz{--a:var(--teal);--soft:#D2F7F0;--on:var(--ink)}
+#view-labs{--a:var(--blue);--soft:#DCE8FF}
+#view-settings{--a:#4B4270;--soft:#E7E3F3}
+#view-history{--a:#FF7A45;--soft:#FFE3D6;--on:var(--ink)}
+@media (max-width:820px){.view{padding:16px 14px 24px}}
+
+.vh{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.vh h1{font:700 clamp(30px,5vw,44px)/1.05 var(--fd);margin:0;position:relative;z-index:0}
+.vh h1::after{content:"";position:absolute;left:-6px;right:-6px;bottom:2px;height:14px;background:var(--a);opacity:.55;border-radius:8px;z-index:-1}
+.vh p{margin:0;color:var(--muted);flex:1 1 300px;font-size:16px;max-width:60ch}
+
+.box{background:var(--card);border:var(--bd);border-radius:20px;box-shadow:var(--sh);padding:18px}
+.field{width:100%;border:var(--bd);border-radius:14px;padding:12px 14px;font:600 16px var(--fb);background:#fff;resize:vertical}
+.field:focus{box-shadow:0 0 0 4px var(--soft)}
+label.l{display:block;font:600 15px var(--fd);margin:0 0 6px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.row>*{flex:0 0 auto}
+.grow{flex:1 1 220px!important}
+
+.btn{font:600 17px var(--fd);border:var(--bd);border-radius:14px;padding:10px 18px;background:var(--a);color:var(--on);box-shadow:3px 3px 0 var(--ink);cursor:pointer;transition:transform .08s,box-shadow .08s;white-space:nowrap}
+.btn:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--ink)}
+.btn:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--ink)}
+.btn:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:3px 3px 0 var(--ink)}
+.btn.ghost{background:#fff;color:var(--ink)}
+.btn.red{background:var(--red);color:#fff}
+.btn.green{background:var(--green);color:var(--ink)}
+.btn.sm{font-size:14px;padding:6px 12px;border-radius:11px;box-shadow:2px 2px 0 var(--ink)}
+.btn.icon{padding:10px 12px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:2px solid var(--ink);border-radius:999px;padding:5px 14px;background:#fff;font:600 15px var(--fd);cursor:pointer;transition:transform .1s}
+.chip:hover{transform:translateY(-2px)}
+.chip.on{background:var(--a);color:var(--on)}
+.chip.idea{font:700 14px var(--fb);background:var(--soft)}
+select.field{width:auto;padding:10px 12px;cursor:pointer}
+
+.att{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.att .f{display:inline-flex;gap:6px;align-items:center;border:2px solid var(--ink);border-radius:10px;background:var(--soft);padding:3px 4px 3px 10px;font-size:13px;font-weight:800;max-width:220px}
+.att .f span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.att .f button{border:0;background:#fff;border-radius:6px;width:22px;height:22px;cursor:pointer;font-weight:900}
+
+/* chat */
+#view-chat.on{position:absolute;inset:0;display:flex;flex-direction:column;max-width:900px;padding-bottom:14px}
+#view-chat .vh{margin-bottom:8px}
+.msgs{flex:1;overflow:auto;padding:6px 4px 12px;display:flex;flex-direction:column;gap:16px;scroll-behavior:smooth}
+.msg{display:flex;gap:10px;max-width:100%}
+.msg.me{justify-content:flex-end}
+.msg .av{width:38px;height:38px;flex:none}
+.bub{border:var(--bd);border-radius:18px;padding:12px 16px;background:#fff;box-shadow:3px 3px 0 var(--ink);max-width:min(720px,100%);min-width:0;line-height:1.55;overflow-wrap:anywhere}
+.msg.me .bub{background:var(--violet);color:#fff;border-bottom-right-radius:4px}
+.msg.ai .bub{border-bottom-left-radius:4px}
+.bub p{margin:0 0 .7em}.bub p:last-child{margin-bottom:0}
+.bub h2,.bub h3,.bub h4,.bub h5{font-family:var(--fd);margin:.8em 0 .3em;line-height:1.2}
+.bub ul,.bub ol{margin:.3em 0 .8em;padding-left:1.3em}
+.bub code{background:#EFE9FF;border-radius:6px;padding:1px 6px;font-size:.92em}
+.bub pre{background:#231A4F;color:#F3EEFF;border-radius:12px;padding:12px;overflow:auto;margin:.6em 0}
+.bub pre code{background:none;padding:0;color:inherit}
+.bub blockquote{margin:.5em 0;padding:4px 12px;border-left:5px solid var(--violet);background:#F5F0FF;border-radius:0 10px 10px 0}
+.bub .tw{overflow:auto;margin:.5em 0}
+.bub table{border-collapse:collapse;font-size:.95em}
+.bub th,.bub td{border:2px solid var(--ink);padding:5px 10px;text-align:left}
+.bub th{background:#FFE3A3}
+.msg.me .bub code{background:rgba(255,255,255,.2)}
+.fchips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.fchips span{background:rgba(255,255,255,.25);border-radius:8px;padding:2px 8px;font-size:12px;font-weight:800}
+.acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.gi{margin:.6em 0;border:var(--bd);border-radius:14px;overflow:hidden;background:#fff;position:relative;max-width:420px}
+.gi img{display:block;width:100%;opacity:0;transition:opacity .5s}
+.gi img.in{opacity:1}
+.gi figcaption{font-size:12px;color:var(--muted);padding:6px 10px;border-top:2px solid var(--ink)}
+.sk{position:absolute;inset:0 0 28px 0;background:linear-gradient(100deg,#f0e9ff 30%,#fff 50%,#f0e9ff 70%);background-size:200% 100%;animation:shimmer 1.2s linear infinite;min-height:200px}
+.gi:has(.sk){min-height:240px}
+@keyframes shimmer{to{background-position:-200% 0}}
+.imgerr{padding:22px;text-align:center;font-weight:800}
+.dots{display:inline-flex;gap:5px;padding:4px 0}
+.dots span{width:10px;height:10px;border-radius:50%;background:var(--violet);animation:hop .9s infinite}
+.dots span:nth-child(2){background:var(--pink);animation-delay:.15s}
+.dots span:nth-child(3){background:var(--amber);animation-delay:.3s}
+@keyframes hop{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-8px)}}
+.hero{margin:auto;text-align:center;max-width:560px;padding:10px}
+.hero h2{font:700 34px var(--fd);margin:6px 0}
+.hero p{color:var(--muted);margin:0 0 16px}
+.hero .chips{justify-content:center}
+.mascot{width:130px;height:130px;animation:bob 3s ease-in-out infinite}
+.mascot .eye{transform-box:fill-box;transform-origin:center;animation:blink 4.5s infinite}
+.mascot .spark{animation:pulse 1.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes bob{50%{transform:translateY(-8px) rotate(-2deg)}}
+@keyframes blink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+@keyframes pulse{50%{transform:scale(1.35)}}
+.composer{padding:6px 4px 0;display:flex;flex-direction:column;gap:8px}
+.cbox{display:flex;gap:8px;align-items:flex-end}
+.cbox textarea{flex:1;min-height:50px;max-height:160px;resize:none}
+.drop{outline:4px dashed var(--violet);outline-offset:-8px}
+
+/* images */
+.style-row{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0 4px}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px;margin-top:22px}
+.shot{border:var(--bd);border-radius:18px;box-shadow:var(--sh);background:#fff;overflow:hidden;animation:pop .35s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{transform:scale(.85);opacity:0}}
+.shot .pic{position:relative;min-height:220px;background:var(--soft);display:grid;place-items:center}
+.shot .pic img{display:block;width:100%;opacity:0;transition:opacity .5s}
+.shot .pic img.in{opacity:1}
+.shot .cap{padding:10px 12px;border-top:var(--bd);font-size:13px}
+.shot .cap p{margin:0 0 8px;color:var(--muted)}
+.hint{color:var(--muted);font-size:14px;margin:8px 0 0}
+.empty{text-align:center;color:var(--muted);padding:26px}
+.empty b{display:block;font:600 22px var(--fd);color:var(--ink);margin-bottom:4px}
+
+/* flashcards */
+.prog{height:16px;border:var(--bd);border-radius:99px;background:#fff;overflow:hidden;margin:6px 0}
+.prog div{height:100%;background:var(--a);width:0;transition:width .4s}
+.meta{display:flex;justify-content:space-between;margin-bottom:14px;font:600 17px var(--fd)}
+.card3d{perspective:1400px;width:min(600px,100%);height:min(340px,52vh);margin:8px auto 10px;cursor:pointer;outline-offset:6px}
+.card-in{position:relative;width:100%;height:100%;transition:transform .6s cubic-bezier(.2,.8,.2,1);transform-style:preserve-3d}
+.card3d.flip .card-in{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:var(--bd);border-radius:26px;box-shadow:var(--sh);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:26px 30px;text-align:center;overflow:auto}
+.face.front{background:var(--fc,#FFD166)}
+.face.back{background:#fff;transform:rotateY(180deg)}
+.face small{font:600 14px var(--fd);background:var(--ink);color:#fff;border-radius:99px;padding:2px 12px}
+.face .t{font:600 clamp(20px,3.4vw,28px)/1.3 var(--fd)}
+.face .hint-t{font-size:15px;font-weight:700;background:rgba(255,255,255,.7);border-radius:10px;padding:4px 10px}
+.ctrls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:12px 0}
+.tip{text-align:center;color:var(--muted);font-size:14px;margin:0}
+.big{font:700 64px var(--fd);line-height:1}
+.center{text-align:center}
+
+/* quiz */
+.qcard{max-width:760px;margin:0 auto}
+.qq{font:600 clamp(20px,3vw,27px)/1.35 var(--fd);margin:8px 0 18px}
+.opts{display:grid;gap:12px}
+.opt{display:flex;gap:12px;align-items:center;text-align:left;font:700 17px var(--fb);border:var(--bd);border-radius:16px;padding:12px 14px;background:#fff;cursor:pointer;box-shadow:3px 3px 0 var(--ink);transition:transform .08s,background .2s}
+.opt b{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:10px;border:2px solid var(--ink);background:var(--soft);font-family:var(--fd)}
+.opt:hover:not(:disabled){transform:translate(-1px,-1px);background:var(--soft)}
+.opt.right{background:#BFF5D2;animation:pop .3s}
+.opt.right b{background:var(--green)}
+.opt.wrong{background:#FFD0D2;animation:shake .35s}
+.opt.wrong b{background:var(--red);color:#fff}
+.opt:disabled{cursor:default}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.explain{margin-top:16px;padding:12px 14px;border:var(--bd);border-radius:14px;background:#FFF7DD;animation:pop .3s}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.stat{border:2px solid var(--ink);border-radius:12px;padding:3px 12px;background:#fff;font:600 16px var(--fd)}
+.review{text-align:left;margin-top:16px}
+.review .r{border:2px solid var(--ink);border-radius:12px;padding:8px 12px;margin-bottom:8px;background:#fff;font-size:15px}
+.pill{display:inline-flex;gap:8px;align-items:center;border:2px solid var(--ink);background:var(--soft);border-radius:99px;padding:3px 6px 3px 12px;font-size:14px;font-weight:800;margin-top:10px}
+.pill button{border:0;background:#fff;border-radius:99px;width:22px;height:22px;cursor:pointer;font-weight:900}
+
+/* labs */
+.subjects{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.subj{--c:#2ECC71;border:var(--bd);border-radius:18px;background:#fff;padding:12px 8px;cursor:pointer;font:600 18px var(--fd);text-align:center;box-shadow:3px 3px 0 var(--ink);transition:transform .1s}
+.subj i{display:block;font-style:normal;font-size:34px;margin-bottom:2px}
+.subj:hover{transform:translateY(-3px)}
+.subj.on{background:var(--c);transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.subj[data-s=chemistry]{--c:#6FE39A}.subj[data-s=physics]{--c:#8FB8FF}.subj[data-s=cs]{--c:#C6A8FF}.subj[data-s=maths]{--c:#FFC773}
+@media (max-width:620px){.subjects{grid-template-columns:repeat(2,1fr)}}
+.stage{margin-top:18px;border:var(--bd);border-radius:22px;box-shadow:var(--sh);background:#fff;overflow:hidden;min-height:360px;position:relative}
+.stage iframe{display:block;width:100%;height:min(76vh,780px);min-height:460px;border:0;background:#fff}
+.stage .ph{padding:50px 20px;text-align:center}
+.flask{font-size:64px;display:inline-block;animation:wob 2.2s ease-in-out infinite}
+@keyframes wob{0%,100%{transform:rotate(-12deg)}50%{transform:rotate(12deg) translateY(-6px)}}
+.stage .load{position:absolute;inset:0;background:rgba(255,255,255,.93);display:grid;place-items:center;text-align:center;z-index:2}
+.tools{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center}
+.tools .field{flex:1 1 260px}
+
+/* settings */
+.steps{counter-reset:s;list-style:none;padding:0;margin:0 0 16px}
+.steps li{counter-increment:s;display:flex;gap:12px;margin-bottom:10px;line-height:1.5}
+.steps li::before{content:counter(s);flex:none;width:30px;height:30px;border:2px solid var(--ink);border-radius:50%;display:grid;place-items:center;background:var(--amber);font:700 16px var(--fd)}
+a{color:var(--violet);font-weight:800}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:820px){.grid2{grid-template-columns:1fr}}
+
+#toasts{position:fixed;top:14px;right:14px;z-index:50;display:flex;flex-direction:column;gap:8px;max-width:min(380px,calc(100vw - 28px))}
+.toast{border:var(--bd);border-radius:14px;background:#fff;padding:10px 14px;box-shadow:3px 3px 0 var(--ink);font-weight:800;animation:pop .3s}
+.toast.err{background:#FFD0D2}.toast.ok{background:#BFF5D2}
+#confetti{position:fixed;inset:0;z-index:60;pointer-events:none}
+
+/* sign-in gate + history */
+#gate{position:fixed;inset:0;z-index:70;display:grid;place-items:center;background:rgba(245,240,255,.97);padding:16px;overflow:auto}
+.gatebox{width:min(440px,100%);text-align:center;--a:var(--violet);--on:#fff;--soft:#EBE3FF}
+.gatebox .mascot{width:96px;height:96px}
+.gatebox h1{font:700 40px var(--fd);margin:0 0 4px}
+.gatebox .chips{justify-content:center;margin:12px 0}
+.gatebox label.l{text-align:left;margin-top:10px}
+.gerr{min-height:22px;margin:10px 0 4px;color:#B4142B;font-weight:800}
+.gatebox .btn{width:100%;margin-top:6px}
+.hrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;border:var(--bd);border-radius:16px;background:#fff;box-shadow:3px 3px 0 var(--ink);padding:10px 14px;margin-bottom:12px}
+.hrow .t{flex:1 1 220px;min-width:0}
+.hrow .t b{display:block;font:600 18px var(--fd);overflow-wrap:anywhere}
+.hrow .t span{color:var(--muted);font-size:14px}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001s!important;animation-iteration-count:1!important;transition-duration:.001s!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+<div class="bg" aria-hidden="true"><i class="blob b1"></i><i class="blob b2"></i><i class="blob b3"></i><i class="blob b4"></i></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="bot" viewBox="0 0 120 120">
+    <line x1="60" y1="16" x2="60" y2="32" stroke="#231A4F" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="60" cy="11" r="8" fill="#FFD166" stroke="#231A4F" stroke-width="5"/>
+    <rect x="16" y="30" width="88" height="80" rx="30" fill="#8B6BFF" stroke="#231A4F" stroke-width="6"/>
+    <rect x="29" y="46" width="62" height="42" rx="18" fill="#fff" stroke="#231A4F" stroke-width="5"/>
+    <ellipse cx="47" cy="65" rx="6" ry="8" fill="#231A4F"/><ellipse cx="73" cy="65" rx="6" ry="8" fill="#231A4F"/>
+    <path d="M50 79 Q60 87 70 79" fill="none" stroke="#231A4F" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="37" cy="77" r="4" fill="#FF9EC7"/><circle cx="83" cy="77" r="4" fill="#FF9EC7"/>
+  </symbol>
+</svg>
+
+<div class="app">
+  <nav class="nav" aria-label="Main">
+    <div class="logo"><svg><use href="#bot"/></svg>Brainy</div>
+    <button data-go="chat" style="--c:#B9A6FF"><i>💬</i>Ask</button>
+    <button data-go="images" style="--c:#FF9EC7"><i>🎨</i>Draw</button>
+    <button data-go="cards" style="--c:#FFD166"><i>🃏</i>Cards</button>
+    <button data-go="quiz" style="--c:#7DE8D4"><i>📝</i>Quiz</button>
+    <button data-go="labs" style="--c:#8FC2FF"><i>🔬</i>Labs</button>
+    <button data-go="history" style="--c:#FFB894"><i>📚</i>History</button>
+    <div class="sp"></div>
+    <button data-go="settings" style="--c:#DAD5EE"><i>⚙️</i>Setup</button>
+  </nav>
+
+  <main>
+    <div id="keybar" hidden>👋 One quick step: add your free Google Gemini key to switch everything on. <button data-go="settings">Add key</button></div>
+    <div id="views">
+
+      <!-- CHAT -->
+      <section class="view" id="view-chat">
+        <header class="vh"><h1>Ask Brainy</h1><p>Ask anything. Add photos, PDFs or notes. Type <b>/image a volcano</b> to draw a picture.</p><button class="btn ghost sm" id="chat-clear">New chat</button></header>
+        <div class="msgs" id="msgs" aria-live="polite"></div>
+        <div class="composer">
+          <div class="att" id="chat-attach"></div>
+          <div class="cbox">
+            <textarea id="chat-in" class="field" rows="1" placeholder="Type your question…" aria-label="Your question"></textarea>
+            <button class="btn ghost icon" id="mic" title="Speak your question" aria-label="Speak your question">🎤</button>
+            <button class="btn" id="chat-send">Send</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- IMAGES -->
+      <section class="view" id="view-images">
+        <header class="vh"><h1>Draw anything</h1><p>Describe a picture and Brainy makes it. Pick “Labelled diagram” when you need correct words on it.</p></header>
+        <div class="box">
+          <label class="l" for="im-prompt">What should I draw?</label>
+          <textarea id="im-prompt" class="field" rows="2" placeholder="A plant cell with a nucleus, chloroplasts and a cell wall"></textarea>
+          <div class="style-row">
+            <div><label class="l">Type</label><div class="chips" id="im-mode"><button class="chip on" data-v="art">🖼️ Picture</button><button class="chip" data-v="svg">🏷️ Labelled diagram</button></div></div>
+            <div id="im-style-wrap"><label class="l">Style</label><div class="chips" id="im-style"></div></div>
+            <div id="im-size-wrap"><label class="l">Shape</label><div class="chips" id="im-size"><button class="chip on" data-v="1024x1024">Square</button><button class="chip" data-v="1280x720">Wide</button><button class="chip" data-v="720x1280">Tall</button></div></div>
+          </div>
+          <div class="row" style="margin-top:14px">
+            <label class="chip" id="im-improve-l" style="display:inline-flex;gap:8px;align-items:center"><input type="checkbox" id="im-improve" checked> Let AI improve my words</label>
+            <button class="btn" id="im-go">Make it ✨</button>
+          </div>
+          <p class="hint">Pictures come from a free image service and can take 10–30 seconds. Labelled diagrams are drawn by the AI as clean vector art.</p>
+        </div>
+        <div class="gallery" id="gallery"></div>
+        <div class="empty" id="gallery-empty"><b>Nothing here yet</b>Your pictures will pop up here.</div>
+      </section>
+
+      <!-- FLASHCARDS -->
+      <section class="view" id="view-cards">
+        <header class="vh"><h1>Flashcards</h1><p>Type a topic or add your notes. Brainy turns them into cards you can flip.</p></header>
+        <div id="fc-setup" class="box">
+          <label class="l" for="fc-topic">Topic</label>
+          <input id="fc-topic" class="field" placeholder="e.g. Photosynthesis, Newton's laws, Python loops">
+          <div class="row" style="margin-top:12px">
+            <div><label class="l" for="fc-n">How many</label><select id="fc-n" class="field"><option>5</option><option selected>10</option><option>15</option><option>20</option></select></div>
+            <div><label class="l" for="fc-lvl">Level</label><select id="fc-lvl" class="field"><option>beginner</option><option selected>middle school</option><option>high school</option><option>college</option></select></div>
+            <div class="att" id="fc-attach"></div>
+          </div>
+          <div id="fc-src"></div>
+          <div class="row" style="margin-top:14px"><button class="btn" id="fc-go">Make flashcards</button></div>
+          <div id="fc-decks" style="margin-top:16px"></div>
+        </div>
+        <div id="fc-play" hidden>
+          <div class="meta"><span id="fc-title"></span><span id="fc-count"></span></div>
+          <div class="prog"><div id="fc-bar"></div></div>
+          <div class="card3d" id="fc-card" tabindex="0" role="button" aria-label="Flip card">
+            <div class="card-in">
+              <div class="face front"><small>Question</small><div class="t" id="fc-q"></div><button class="btn ghost sm" id="fc-hintb">💡 Hint</button><div class="hint-t" id="fc-hint" hidden></div></div>
+              <div class="face back"><small>Answer</small><div class="t" id="fc-a"></div></div>
+            </div>
+          </div>
+          <p class="tip">Tap the card or press Space to flip. Use ← → to move.</p>
+          <div class="ctrls">
+            <button class="btn ghost" id="fc-prev">◀ Back</button>
+            <button class="btn red" id="fc-again">Still learning</button>
+            <button class="btn green" id="fc-got">I know it!</button>
+          </div>
+          <div class="ctrls"><button class="btn ghost sm" id="fc-shuffle">🔀 Shuffle</button><button class="btn ghost sm" id="fc-new">＋ New deck</button></div>
+        </div>
+        <div id="fc-done" class="box center" hidden></div>
+      </section>
+
+      <!-- QUIZ -->
+      <section class="view" id="view-quiz">
+        <header class="vh"><h1>Quiz time</h1><p>Pick a topic and test yourself. You get an explanation after every answer.</p></header>
+        <div id="qz-setup" class="box">
+          <label class="l" for="qz-topic">Topic</label>
+          <input id="qz-topic" class="field" placeholder="e.g. Fractions, The water cycle, Acids and bases">
+          <div class="row" style="margin-top:12px">
+            <div><label class="l" for="qz-n">Questions</label><select id="qz-n" class="field"><option>5</option><option selected>8</option><option>10</option><option>15</option></select></div>
+            <div><label class="l" for="qz-lvl">Level</label><select id="qz-lvl" class="field"><option>easy</option><option selected>medium</option><option>hard</option><option>exam style</option></select></div>
+            <div class="att" id="qz-attach"></div>
+          </div>
+          <div id="qz-src"></div>
+          <div class="row" style="margin-top:14px"><button class="btn" id="qz-go">Start quiz</button></div>
+        </div>
+        <div id="qz-play" class="qcard" hidden>
+          <div class="stats"><span class="stat" id="qz-q">Q 1/8</span><span class="stat" id="qz-score">⭐ 0</span><span class="stat" id="qz-streak">🔥 0</span></div>
+          <div class="prog"><div id="qz-bar"></div></div>
+          <div class="box" style="margin-top:14px">
+            <div class="qq" id="qz-text"></div>
+            <div class="opts" id="qz-opts"></div>
+            <div id="qz-exp"></div>
+            <div class="ctrls" style="justify-content:flex-end"><button class="btn" id="qz-next" hidden>Next ▶</button></div>
+          </div>
+        </div>
+        <div id="qz-done" class="box center qcard" hidden></div>
+      </section>
+
+      <!-- LABS -->
+      <section class="view" id="view-labs">
+        <header class="vh"><h1>Virtual labs</h1><p>Choose a subject, describe an experiment, and Brainy builds it so you can play with it.</p></header>
+        <div class="subjects" id="subjects">
+          <button class="subj on" data-s="chemistry"><i>🧪</i>Chemistry</button>
+          <button class="subj" data-s="physics"><i>🚀</i>Physics</button>
+          <button class="subj" data-s="cs"><i>💻</i>Computer Science</button>
+          <button class="subj" data-s="maths"><i>📐</i>Maths</button>
+        </div>
+        <div class="box">
+          <label class="l" for="lab-prompt">What do you want to try?</label>
+          <textarea id="lab-prompt" class="field" rows="2" placeholder="Describe your experiment in your own words"></textarea>
+          <div class="chips" id="lab-ideas" style="margin-top:10px"></div>
+          <div class="row" style="margin-top:14px"><button class="btn" id="lab-go">Build my lab ⚗️</button><button class="btn ghost" id="lab-starter">Open a ready-made lab</button></div>
+        </div>
+        <div class="stage" id="stage">
+          <div class="ph" id="lab-ph"><span class="flask">⚗️</span><h2 style="font:600 24px var(--fd);margin:8px 0 4px">Your lab appears here</h2><p class="hint">No key yet? The ready-made labs work without one.</p></div>
+          <iframe id="lab-frame" title="Lab" sandbox="allow-scripts" allowfullscreen hidden></iframe>
+          <div class="load" id="lab-load" hidden><div><span class="flask">🧪</span><h3 style="font:600 22px var(--fd);margin:8px 0 2px" id="lab-load-t">Mixing your lab…</h3><div class="dots"><span></span><span></span><span></span></div></div></div>
+        </div>
+        <div class="tools" id="lab-tools" hidden>
+          <input id="lab-edit" class="field" placeholder="Change this lab: “add a mass slider”, “make it bigger”, “add a graph”…">
+          <button class="btn" id="lab-apply">Update lab</button>
+          <button class="btn ghost" id="lab-full">⛶ Full screen</button>
+          <button class="btn ghost" id="lab-save">⬇ Save</button>
+        </div>
+      </section>
+
+      <!-- HISTORY -->
+      <section class="view" id="view-history">
+        <header class="vh"><h1>My history</h1><p id="acct-note"></p><button class="btn ghost sm" id="signout" hidden>Sign out</button></header>
+        <div class="chips" id="h-tabs" style="margin-bottom:16px"></div>
+        <div id="h-list"></div>
+        <p class="hint" style="margin-top:22px">Something not working? <a href="#check" data-go="check">Run a connection check</a></p>
+      </section>
+
+      <!-- CONNECTION CHECK (open with #check) -->
+      <section class="view" id="view-check">
+        <header class="vh"><h1>Connection check</h1><p>Runs a few quick tests so we can see exactly what is not working.</p></header>
+        <div class="box"><button class="btn" id="chk-go">Run checks</button><div id="chk-out" style="margin-top:16px"></div></div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section class="view" id="view-settings">
+        <header class="vh"><h1>Setup</h1><p>Brainy uses free services. Your key stays in this browser only.</p></header>
+        <div class="grid2">
+          <div class="box">
+            <h2 style="font:600 24px var(--fd);margin:0 0 12px">Get your free key</h2>
+            <ol class="steps">
+              <li><span>Open <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> and sign in with a Google account.</span></li>
+              <li><span>Press <b>Create API key</b>. It is free and needs no credit card.</span></li>
+              <li><span>Copy the key and paste it here.</span></li>
+            </ol>
+            <label class="l" for="set-key">Gemini API key</label>
+            <div class="row"><input id="set-key" class="field grow" type="password" placeholder="AIza…" autocomplete="off" spellcheck="false"><button class="btn ghost sm" id="set-show">Show</button></div>
+            <div class="row" style="margin-top:14px"><button class="btn" id="set-save">Save &amp; test</button></div>
+          </div>
+          <div class="box">
+            <h2 style="font:600 24px var(--fd);margin:0 0 12px">Advanced</h2>
+            <label class="l" for="set-model">AI model</label>
+            <input id="set-model" class="field" list="models" spellcheck="false">
+            <datalist id="models"><option value="gemini-flash-latest"><option value="gemini-flash-lite-latest"><option value="gemini-2.5-flash"><option value="gemini-2.5-flash-lite"><option value="gemini-2.5-pro"></datalist>
+            <p class="hint">If you see “limit reached”, switch to a lighter model such as gemini-2.5-flash-lite.</p>
+            <label class="l" for="set-img" style="margin-top:14px">Image service address</label>
+            <input id="set-img" class="field" spellcheck="false">
+            <p class="hint">Use {prompt}, {w}, {h} and {seed}. The default is free and needs no key.</p>
+            <div class="row" style="margin-top:14px"><button class="btn ghost sm" id="set-reset-img">Reset image address</button><button class="btn red sm" id="set-wipe">Erase my saved data</button></div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<div id="gate" hidden>
+  <div class="box gatebox">
+    <svg class="mascot" viewBox="0 0 120 120" aria-hidden="true"><use href="#bot"/></svg>
+    <h1>Brainy</h1>
+    <p class="hint" style="margin:0" id="g-sub">Sign in to keep your chats, flashcards and quizzes.</p>
+    <div class="chips" id="g-tabs"><button class="chip on" data-m="login">Sign in</button><button class="chip" data-m="register">Create account</button></div>
+    <div id="g-name-w" hidden><label class="l" for="g-name">Your name</label><input id="g-name" class="field" autocomplete="name"></div>
+    <label class="l" for="g-email">Email</label><input id="g-email" class="field" type="email" autocomplete="email" spellcheck="false">
+    <label class="l" for="g-pw">Password</label><input id="g-pw" class="field" type="password" autocomplete="current-password" placeholder="At least 6 characters">
+    <p class="gerr" id="g-err" role="alert"></p>
+    <button class="btn" id="g-go">Sign in</button>
+    <button class="btn ghost sm" id="g-reset" style="margin-top:10px">Forgot password?</button>
+  </div>
+</div>
+
+<div id="toasts" role="status"></div>
+<canvas id="confetti" aria-hidden="true"></canvas>
+
+<!-- READY-MADE LABS (work with no key) -->
+<script id="labs">
+const LAB_HEAD='<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>'
++'*{box-sizing:border-box}body{margin:0;font-family:system-ui,Segoe UI,sans-serif;font-weight:600;background:linear-gradient(135deg,#eef4ff,#fdf0ff);color:#231A4F;padding:14px}'
++'h1{font-size:22px;margin:0 0 4px}p{margin:4px 0 10px;line-height:1.45}.row{display:flex;flex-wrap:wrap;gap:14px}'
++'.panel{background:#fff;border:3px solid #231A4F;border-radius:16px;box-shadow:4px 4px 0 #231A4F;padding:12px}'
++'canvas{width:100%;display:block;border-radius:10px}label{display:block;font-weight:800;font-size:14px;margin-top:10px}'
++'input[type=range]{width:100%}button,select,input[type=text]{font:800 14px system-ui;border:3px solid #231A4F;border-radius:10px;padding:7px 12px;background:#FFD166;cursor:pointer;color:#231A4F}'
++'input[type=text]{background:#fff;cursor:text;width:100%}.out{font-variant-numeric:tabular-nums;font-weight:900}.note{background:#FFF7DD;border:2px solid #231A4F;border-radius:10px;padding:8px 10px;font-size:14px}'
++'</style></head><body>';
+
+const STARTERS={
+physics:LAB_HEAD+`
+<h1>🚀 Projectile Launcher</h1><p>Set the angle and speed, then press Launch. Change gravity to visit other worlds!</p>
+<div class="row"><div class="panel" style="flex:2 1 420px"><canvas id="c" width="800" height="420"></canvas></div>
+<div class="panel" style="flex:1 1 240px">
+<label>Angle: <span class="out" id="av">45</span>°</label><input type="range" id="a" min="5" max="85" value="45">
+<label>Speed: <span class="out" id="vv">30</span> m/s</label><input type="range" id="v" min="5" max="60" value="30">
+<label>World</label><select id="g"><option value="9.81">Earth (9.81)</option><option value="1.62">Moon (1.62)</option><option value="3.71">Mars (3.71)</option><option value="24.8">Jupiter (24.8)</option></select>
+<p><button id="go">Launch 🚀</button> <button id="clr">Clear</button></p>
+<p>Range: <span class="out" id="r">–</span> m<br>Max height: <span class="out" id="h">–</span> m<br>Flight time: <span class="out" id="t">–</span> s</p>
+<div class="note">Range = v² × sin(2θ) ÷ g. The best angle on flat ground is 45°. Try 30° and 60°: they land in the same place!</div>
+</div></div>
+<script>
+function $(i){return document.getElementById(i)}
+var c=$('c'),x=c.getContext('2d'),W=c.width,H=c.height,shots=[],last=0;
+$('a').oninput=function(){$('av').textContent=$('a').value};
+$('v').oninput=function(){$('vv').textContent=$('v').value};
+function calc(a,v,g){var r=a*Math.PI/180;return{R:v*v*Math.sin(2*r)/g,Hm:Math.pow(v*Math.sin(r),2)/(2*g),T:2*v*Math.sin(r)/g}}
+function pos(s,t){var r=s.a*Math.PI/180;return[s.v*Math.cos(r)*t,s.v*Math.sin(r)*t-0.5*s.g*t*t]}
+$('go').onclick=function(){var a=+$('a').value,v=+$('v').value,g=+$('g').value,m=calc(a,v,g);
+ shots.push({a:a,v:v,g:g,m:m,t:0,col:'hsl('+((shots.length*67)%360)+',80%,42%)'});
+ $('r').textContent=m.R.toFixed(1);$('h').textContent=m.Hm.toFixed(1);$('t').textContent=m.T.toFixed(2)};
+$('clr').onclick=function(){shots=[]};
+function draw(now){
+ var dt=Math.min(0.05,((now-last)/1000)||0);last=now;
+ var gr=x.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#bfe6ff');gr.addColorStop(1,'#eaf7ff');x.fillStyle=gr;x.fillRect(0,0,W,H);
+ x.fillStyle='#6fd08c';x.fillRect(0,H-30,W,30);
+ var mr=50,mh=10;shots.forEach(function(s){mr=Math.max(mr,s.m.R);mh=Math.max(mh,s.m.Hm)});
+ var sc=Math.min((W-60)/mr,(H-70)/mh);
+ var st=mr>1000?500:mr>400?100:mr>150?50:mr>60?20:10;
+ x.fillStyle='#231A4F';x.font='12px system-ui';
+ for(var d=0;d<=mr*1.05;d+=st){var px=20+d*sc;x.fillRect(px,H-30,2,8);x.fillText(d+' m',px-8,H-8)}
+ shots.forEach(function(s){
+  var k=Math.max(1,s.m.T/3);if(s.t<s.m.T)s.t=Math.min(s.m.T,s.t+dt*k);
+  x.strokeStyle=s.col;x.lineWidth=3;x.setLineDash([6,6]);x.beginPath();
+  for(var i=0;i<=80;i++){var t=Math.min(s.t,s.m.T*i/80);var p=pos(s,t);var X=20+p[0]*sc,Y=H-30-Math.max(0,p[1])*sc;if(i===0)x.moveTo(X,Y);else x.lineTo(X,Y);if(t>=s.t)break}
+  x.stroke();x.setLineDash([]);
+  var q=pos(s,s.t);x.fillStyle=s.col;x.beginPath();x.arc(20+q[0]*sc,H-30-Math.max(0,q[1])*sc,9,0,7);x.fill();x.strokeStyle='#231A4F';x.lineWidth=3;x.stroke();
+ });
+ requestAnimationFrame(draw)}
+requestAnimationFrame(draw);
+<\/script></body><body><script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyDY1cHiDQT68Z2O5vX_fUARV4DZx-th3Xg",
+    authDomain: "brainy-your-ai-study-buddy.firebaseapp.com",
+    projectId: "brainy-your-ai-study-buddy",
+    storageBucket: "brainy-your-ai-study-buddy.firebasestorage.app",
+    messagingSenderId: "600925887048",
+    appId: "1:600925887048:web:75e3adcae997e7d334d67d",
+    measurementId: "G-BYF0XXJZBH"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script></body></html>`,
+
+chemistry:LAB_HEAD+`
+<h1>🧪 pH Lab</h1><p>Add acid (HCl) or base (NaOH) to 50 mL of water that has universal indicator in it. Watch the colour and the pH change!</p>
+<div class="row"><div class="panel" style="flex:1 1 360px"><canvas id="c" width="500" height="440"></canvas></div>
+<div class="panel" style="flex:1 1 240px">
+<label>Amount to add (0.1 M solution)</label><select id="amt"><option value="0.05">1 drop (0.05 mL)</option><option value="1" selected>1 mL</option><option value="5">5 mL</option></select>
+<p><button id="acid" style="background:#FF8A8A">+ Acid (HCl)</button> <button id="base" style="background:#8AB4FF">+ Base (NaOH)</button> <button id="rst">Reset</button></p>
+<p>pH: <span class="out" id="ph" style="font-size:38px">7.00</span></p><p class="out" id="kind">Neutral water</p>
+<p>Acid added: <span class="out" id="na">0</span> mL<br>Base added: <span class="out" id="nb">0</span> mL</p>
+<div class="note" id="msg">Pure water has no buffer, so even one drop changes the pH a lot. Acid and base cancel each other: H⁺ + OH⁻ → H₂O.</div>
+</div></div>
+<script>
+function $(i){return document.getElementById(i)}
+var c=$('c'),x=c.getContext('2d'),W=c.width,H=c.height,A=0,B=0,drop=null,bub=[],ph=7,shown=7;
+var stops=[[0,'#ff1e1e'],[2,'#ff3b1d'],[3,'#ff7a1a'],[4,'#ffb01a'],[5,'#ffe01a'],[6,'#c8e82a'],[7,'#3dd16a'],[8,'#2fb8a8'],[9,'#2e8fd6'],[10,'#3f5bd8'],[11,'#5a3fcb'],[12,'#7b2fb5'],[14,'#5b1e8c']];
+function hex(h){return[parseInt(h.substr(1,2),16),parseInt(h.substr(3,2),16),parseInt(h.substr(5,2),16)]}
+function col(p){for(var i=1;i<stops.length;i++){if(p<=stops[i][0]){var a=stops[i-1],b=stops[i],t=(p-a[0])/(b[0]-a[0]),c1=hex(a[1]),c2=hex(b[1]);
+ return 'rgb('+Math.round(c1[0]+(c2[0]-c1[0])*t)+','+Math.round(c1[1]+(c2[1]-c1[1])*t)+','+Math.round(c1[2]+(c2[2]-c1[2])*t)+')'}}return stops[stops.length-1][1]}
+function calc(){var V=50+A+B,net=(A-B)*0.1,cc=net/V,h=(cc+Math.sqrt(cc*cc+4e-14))/2;return Math.max(0,Math.min(14,-Math.log(h)/Math.LN10))}
+function level(){return Math.max(100,360-(170+(A+B)*1.2))}
+function add(type){if(drop)return;drop={y:40,type:type,amt:+$('amt').value}}
+$('acid').onclick=function(){add('a')};$('base').onclick=function(){add('b')};
+$('rst').onclick=function(){A=0;B=0;drop=null;upd()};
+function upd(){ph=calc();$('ph').textContent=ph.toFixed(2);$('na').textContent=A.toFixed(2);$('nb').textContent=B.toFixed(2);
+ $('kind').textContent=ph<3?'Strong acid':ph<6.5?'Acid':ph<7.5?'Neutral':ph<11?'Base':'Strong base'}
+function beaker(){x.beginPath();x.moveTo(150,90);x.lineTo(150,336);x.quadraticCurveTo(150,360,174,360);x.lineTo(326,360);x.quadraticCurveTo(350,360,350,336);x.lineTo(350,90)}
+for(var i=0;i<14;i++)bub.push({x:160+Math.random()*180,y:200+Math.random()*150,r:2+Math.random()*4,v:.3+Math.random()*.6});
+function draw(){
+ shown+=(ph-shown)*0.08;
+ x.clearRect(0,0,W,H);var top=level();
+ x.save();beaker();x.closePath();x.clip();
+ x.fillStyle=col(shown);x.fillRect(140,top,220,370-top);
+ x.fillStyle='rgba(255,255,255,.35)';x.fillRect(140,top,220,6);
+ bub.forEach(function(b){b.y-=b.v;if(b.y<top+6){b.y=350;b.x=160+Math.random()*180}x.beginPath();x.arc(b.x,b.y,b.r,0,7);x.fillStyle='rgba(255,255,255,.55)';x.fill()});
+ x.restore();
+ x.strokeStyle='#231A4F';x.lineWidth=6;x.lineJoin='round';beaker();x.stroke();
+ x.lineWidth=3;for(var k=0;k<6;k++){x.beginPath();x.moveTo(350,130+k*40);x.lineTo(k%2?335:325,130+k*40);x.stroke()}
+ if(drop){drop.y+=7;var dc=drop.type==='a'?'#ff5a5f':'#2f6bff';
+  x.fillStyle=dc;x.strokeStyle='#231A4F';x.lineWidth=3;x.beginPath();x.arc(250,drop.y,9,0,7);x.fill();x.stroke();
+  if(drop.y>=top){if(drop.type==='a')A+=drop.amt;else B+=drop.amt;drop=null;upd()}}
+ for(var p=0;p<=400;p+=2){x.fillStyle=col(p/400*14);x.fillRect(50+p,398,3,16)}
+ x.strokeStyle='#231A4F';x.lineWidth=3;x.strokeRect(50,398,402,16);
+ var mx=50+shown/14*400;x.fillStyle='#231A4F';x.beginPath();x.moveTo(mx,394);x.lineTo(mx-8,382);x.lineTo(mx+8,382);x.fill();
+ x.font='bold 12px system-ui';x.fillText('0',48,430);x.fillText('7',248,430);x.fillText('14',440,430);
+ requestAnimationFrame(draw)}
+upd();draw();
+<\/script></body></html>`,
+
+cs:LAB_HEAD+`
+<h1>📊 Sorting Visualiser</h1><p>Watch how computers put numbers in order. Yellow bars are being compared. Green bars are finished.</p>
+<div class="panel"><canvas id="c" width="900" height="340"></canvas>
+<div class="row" style="align-items:flex-end;margin-top:8px">
+<div><label>Algorithm</label><select id="alg"><option value="bubble">Bubble sort</option><option value="selection">Selection sort</option><option value="insertion">Insertion sort</option><option value="quick">Quick sort</option></select></div>
+<div style="flex:1 1 140px"><label>Bars: <span class="out" id="nv">30</span></label><input id="n" type="range" min="8" max="80" value="30"></div>
+<div style="flex:1 1 140px"><label>Speed</label><input id="sp" type="range" min="1" max="100" value="60"></div>
+<button id="shuf">Shuffle 🔀</button><button id="run">Sort ▶</button></div>
+<p>Comparisons: <span class="out" id="cmp">0</span> &nbsp; Swaps: <span class="out" id="swp">0</span></p>
+<div class="note" id="info"></div></div>
+<script>
+function $(i){return document.getElementById(i)}
+var c=$('c'),x=c.getContext('2d'),W=c.width,H=c.height,arr=[],mark=[],fin=[],cmp=0,swp=0,running=false,gen=null;
+var INFO={bubble:'Bubble sort compares neighbours and swaps them if they are in the wrong order. Big numbers "bubble" to the right. Slow for big lists.',selection:'Selection sort finds the smallest number in the unsorted part and puts it at the front. Simple, but always does lots of comparisons.',insertion:'Insertion sort takes each number and slides it left into the right place, like sorting playing cards in your hand.',quick:'Quick sort picks a pivot, moves smaller numbers to its left and bigger ones to its right, then repeats on each side. Very fast in practice.'};
+function swap(a,b){if(a===b)return;var t=arr[a];arr[a]=arr[b];arr[b]=t;swp++}
+function* bubble(){for(var i=0;i<arr.length;i++){for(var j=0;j<arr.length-i-1;j++){cmp++;mark=[j,j+1];yield;if(arr[j]>arr[j+1]){swap(j,j+1);yield}}fin[arr.length-i-1]=1}}
+function* selection(){for(var i=0;i<arr.length;i++){var m=i;for(var j=i+1;j<arr.length;j++){cmp++;mark=[m,j];yield;if(arr[j]<arr[m])m=j}swap(i,m);fin[i]=1;yield}}
+function* insertion(){for(var i=1;i<arr.length;i++){var j=i;while(j>0){cmp++;mark=[j-1,j];yield;if(arr[j-1]>arr[j]){swap(j-1,j);j--;yield}else break}}}
+function* quick(lo,hi){if(lo>=hi){if(lo===hi)fin[lo]=1;return}var p=arr[hi],i=lo;for(var j=lo;j<hi;j++){cmp++;mark=[j,hi];yield;if(arr[j]<p){swap(i,j);i++;yield}}swap(i,hi);fin[i]=1;yield;yield* quick(lo,i-1);yield* quick(i+1,hi)}
+function init(){running=false;$('run').textContent='Sort ▶';var n=+$('n').value;$('nv').textContent=n;arr=[];fin=[];mark=[];cmp=0;swp=0;for(var i=0;i<n;i++)arr.push(1+Math.floor(Math.random()*99));$('info').textContent=INFO[$('alg').value];stats();draw()}
+function stats(){$('cmp').textContent=cmp;$('swp').textContent=swp}
+function draw(){x.clearRect(0,0,W,H);var n=arr.length,bw=W/n;
+ for(var i=0;i<n;i++){var h=arr[i]/100*(H-26);x.fillStyle=fin[i]?'#2ecc71':(mark.indexOf(i)>=0?'#ffb01a':'#6c8cff');x.fillRect(i*bw+1,H-h,bw-2,h);
+  x.strokeStyle='#231A4F';x.lineWidth=2;x.strokeRect(i*bw+1,H-h,bw-2,h);
+  if(n<=30){x.fillStyle='#231A4F';x.font='bold 12px system-ui';x.textAlign='center';x.fillText(arr[i],i*bw+bw/2,H-h-4)}}}
+function step(){if(!running)return;var r=gen.next();
+ if(r.done){running=false;mark=[];for(var i=0;i<arr.length;i++)fin[i]=1;$('run').textContent='Sort ▶';stats();draw();return}
+ stats();draw();setTimeout(step,Math.max(0,Math.round(400-$('sp').value*4)))}
+$('run').onclick=function(){if(running){running=false;$('run').textContent='Sort ▶';return}
+ if(fin.length&&fin.every(Boolean)&&fin.length===arr.length)init();
+ var a=$('alg').value;gen=a==='bubble'?bubble():a==='selection'?selection():a==='insertion'?insertion():quick(0,arr.length-1);running=true;$('run').textContent='Pause ⏸';step()};
+$('shuf').onclick=init;$('n').oninput=init;$('alg').onchange=init;init();
+<\/script></body></html>`,
+
+maths:LAB_HEAD+`
+<h1>📈 Function Grapher</h1><p>Type a formula using x, then move the sliders a, b and c to see how the graph changes. Use * for multiply and ^ for powers.</p>
+<div class="row"><div class="panel" style="flex:2 1 420px"><canvas id="c" width="760" height="480"></canvas><p class="out" id="hov" style="margin-bottom:0">Move your mouse over the graph.</p></div>
+<div class="panel" style="flex:1 1 240px">
+<label>y =</label><input type="text" id="fx" value="a*sin(b*x)+c" spellcheck="false">
+<p id="err" style="color:#c0162f;margin:6px 0"></p>
+<div class="chips"><button data-f="x^2">x²</button> <button data-f="sin(x)">sin</button> <button data-f="a*x+b">line</button> <button data-f="a*x^2+b*x+c">quad</button> <button data-f="1/x">1/x</button> <button data-f="sqrt(x)">√x</button> <button data-f="abs(x)">|x|</button></div>
+<label>a = <span class="out" id="av"></span></label><input type="range" id="a" min="-5" max="5" step="0.1" value="2">
+<label>b = <span class="out" id="bv"></span></label><input type="range" id="b" min="-5" max="5" step="0.1" value="1">
+<label>c = <span class="out" id="cv"></span></label><input type="range" id="cc" min="-5" max="5" step="0.1" value="0">
+<label>Zoom (x from −R to R): R = <span class="out" id="zv"></span></label><input type="range" id="zm" min="2" max="30" step="1" value="10">
+<div class="note" style="margin-top:10px">Try a*sin(b*x): <b>a</b> changes how tall the wave is, <b>b</b> changes how squeezed it is.</div>
+</div></div>
+<script>
+function $(i){return document.getElementById(i)}
+var c=$('c'),x=c.getContext('2d'),W=c.width,H=c.height,f=null;
+function compile(){try{f=new Function('x','a','b','c','with(Math){return ('+$('fx').value.split('^').join('**')+')}');f(1,1,1,1);$('err').textContent=''}catch(e){f=null;$('err').textContent='Check your formula: '+e.message}draw()}
+function vals(){return{R:+$('zm').value,a:+$('a').value,b:+$('b').value,c:+$('cc').value}}
+function draw(){
+ var p=vals(),R=p.R,yR=R*H/W;$('av').textContent=p.a;$('bv').textContent=p.b;$('cv').textContent=p.c;$('zv').textContent=R;
+ x.fillStyle='#fff';x.fillRect(0,0,W,H);
+ var steps=[.1,.2,.5,1,2,5,10,20,50],st=50;for(var s=0;s<steps.length;s++){if(R/steps[s]<=8){st=steps[s];break}}
+ x.font='12px system-ui';x.textAlign='center';
+ for(var v=Math.ceil(-R/st)*st;v<=R;v+=st){var px=W/2+v/R*(W/2),z=Math.abs(v)<1e-9;x.strokeStyle=z?'#231A4F':'#e3dcff';x.lineWidth=z?3:1;x.beginPath();x.moveTo(px,0);x.lineTo(px,H);x.stroke();if(!z){x.fillStyle='#6b6390';x.fillText(+v.toFixed(2),px,H/2+15)}}
+ for(v=Math.ceil(-yR/st)*st;v<=yR;v+=st){var py=H/2-v/yR*(H/2),z2=Math.abs(v)<1e-9;x.strokeStyle=z2?'#231A4F':'#e3dcff';x.lineWidth=z2?3:1;x.beginPath();x.moveTo(0,py);x.lineTo(W,py);x.stroke();if(!z2){x.fillStyle='#6b6390';x.textAlign='left';x.fillText(+v.toFixed(2),W/2+5,py-3);x.textAlign='center'}}
+ if(!f)return;
+ x.strokeStyle='#ee2d82';x.lineWidth=4;x.lineJoin='round';x.beginPath();var pen=false,prev=0;
+ for(var i=0;i<=W;i+=1.5){var X=(i/W*2-1)*R,Y;try{Y=f(X,p.a,p.b,p.c)}catch(e){Y=NaN}
+  if(typeof Y!=='number'||!isFinite(Y)||Math.abs(Y)>1e5){pen=false;continue}
+  var Py=H/2-Y/yR*(H/2);if(pen&&Math.abs(Py-prev)>H*1.5)pen=false;
+  if(!pen){x.moveTo(i,Py);pen=true}else x.lineTo(i,Py);prev=Py}
+ x.stroke()}
+c.onmousemove=function(e){if(!f)return;var r=c.getBoundingClientRect(),p=vals(),X=(((e.clientX-r.left)/r.width)*2-1)*p.R,Y;try{Y=f(X,p.a,p.b,p.c)}catch(er){Y=NaN}
+ $('hov').textContent='x = '+X.toFixed(2)+'   y = '+(isFinite(Y)?Y.toFixed(3):'undefined')};
+['fx','a','b','cc','zm'].forEach(function(i){$(i).oninput=compile});
+Array.prototype.forEach.call(document.querySelectorAll('[data-f]'),function(b){b.onclick=function(){$('fx').value=b.getAttribute('data-f');compile()}});
+compile();
+<\/script></body></html>`
+};
+</script>
+
+<script>
+/* =========================================================
+   Brainy – single-file AI study app
+   ========================================================= */
+const DEFAULT_KEY = "";  // Leave empty. Anything typed here is visible to every visitor.
+const DEFAULT_MODEL = "gemini-flash-latest";   // only used when students bring their own key (no Worker)
+// SHARED KEY MODE: your Cloudflare Worker address (the key stays hidden inside the Worker).
+const PROXY_URL = "https://brainy-proxy.danyaljan434.workers.dev";
+// LOGIN + HISTORY: paste the two values from your Firebase project (see instructions).
+// Leave both empty to run without accounts (history is then saved on each device only).
+const FIREBASE = { apiKey: "", projectId: "" };
+const AUTH_ON = !!(FIREBASE.apiKey && FIREBASE.projectId);
+const DEFAULT_IMG = "https://image.pollinations.ai/prompt/{prompt}?width={w}&height={h}&seed={seed}&nologo=true&model=flux";
+
+/* ---------- tiny helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('brainy:' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('brainy:' + k, JSON.stringify(v)); } catch (e) {} },
+  wipe() { try { Object.keys(localStorage).filter(k => k.startsWith('brainy:')).forEach(k => localStorage.removeItem(k)); } catch (e) {} }
+};
+const cfg = { key: store.get('key', DEFAULT_KEY), model: store.get('model', DEFAULT_MODEL), img: store.get('img', DEFAULT_IMG) };
+const auth = { user: AUTH_ON ? store.get('session', null) : null };
+function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+function toast(msg, type = 'info') {
+  const t = document.createElement('div'); t.className = 'toast ' + type; t.textContent = msg;
+  $('#toasts').appendChild(t); setTimeout(() => t.remove(), type === 'err' ? 7000 : 3500);
+}
+async function busy(btn, label, fn) {
+  const old = btn.innerHTML; btn.disabled = true; btn.innerHTML = label;
+  try { return await fn(); } finally { btn.disabled = false; btn.innerHTML = old; }
+}
+function confetti() {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const cv = $('#confetti'), x = cv.getContext('2d'); cv.width = innerWidth; cv.height = innerHeight;
+  const cols = ['#6C3BFF','#EE2D82','#FFA41B','#00BFA5','#2F6BFF','#FFD166'];
+  const ps = Array.from({ length: 150 }, () => ({ x: Math.random() * cv.width, y: -20 - Math.random() * cv.height * .5, vx: (Math.random() - .5) * 4, vy: 2 + Math.random() * 4, s: 7 + Math.random() * 8, r: Math.random() * 6, vr: (Math.random() - .5) * .3, c: cols[Math.floor(Math.random() * cols.length)] }));
+  let f = 0;
+  (function tick() {
+    x.clearRect(0, 0, cv.width, cv.height);
+    ps.forEach(p => { p.x += p.vx; p.y += p.vy; p.r += p.vr; x.save(); x.translate(p.x, p.y); x.rotate(p.r); x.fillStyle = p.c; x.fillRect(-p.s / 2, -p.s / 3, p.s, p.s * .6); x.restore(); });
+    if (++f < 230) requestAnimationFrame(tick); else x.clearRect(0, 0, cv.width, cv.height);
+  })();
+}
+
+/* ---------- navigation ---------- */
+function go(name) {
+  $$('.view').forEach(v => v.classList.toggle('on', v.id === 'view-' + name));
+  $$('.nav button').forEach(b => b.classList.toggle('on', b.dataset.go === name));
+  try { history.replaceState(null, '', '#' + name); } catch (e) {}
+  $('#views').scrollTop = 0;
+  if (name === 'history') renderHistory();
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) go(b.dataset.go); });
+function updateKeybar() { $('#keybar').hidden = !!(PROXY_URL || cfg.key); }
+
+/* ---------- Gemini (free tier) ---------- */
+async function gemini({ system, contents, json = false, temperature = 0.7 }) {
+  if (!PROXY_URL && !cfg.key) { go('settings'); throw new Error('Add your free Gemini key in Setup first.'); }
+  const url = PROXY_URL
+    ? PROXY_URL.replace(/\/+$/, '') + '?model=' + encodeURIComponent(DEFAULT_MODEL)
+    : 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(cfg.model) + ':generateContent?key=' + encodeURIComponent(cfg.key);
+  const body = { contents, generationConfig: { temperature } };
+  if (system) body.systemInstruction = { parts: [{ text: system }] };
+  if (json) body.generationConfig.responseMimeType = 'application/json';
+  const headers = { 'Content-Type': 'application/json' };
+  if (PROXY_URL && AUTH_ON) headers.Authorization = await authHeader();
+  let res;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try { res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) }); }
+    catch (e) { throw new Error('Network problem. Check your internet connection.'); }
+    if (res.status === 503 || res.status === 500) { await sleep(1300 * (attempt + 1)); continue; }
+    break;
+  }
+  let data = {}; try { data = await res.json(); } catch (e) {}
+  if (!res.ok) {
+    const m = (data.error && data.error.message) || ('Error ' + res.status);
+    if (res.status === 429) throw new Error(PROXY_URL ? 'Brainy is busy right now. Please wait a minute and try again.' : 'Free limit reached for now. Wait a minute, or pick a lighter model in Setup.');
+    if (res.status === 401 && AUTH_ON) { signOutLocal(); showGate('Please sign in again.'); throw new Error('Please sign in again.'); }
+    if (PROXY_URL) throw new Error(res.status === 404 ? 'Brainy is updating its AI. Please try again in a minute. (' + m + ')' : m);
+    if (res.status === 400 && /API key/i.test(m)) throw new Error('That API key is not valid. Check it in Setup.');
+    if (res.status === 403) throw new Error('This key cannot use that model. Check your key in Setup.');
+    if (res.status === 404) throw new Error('That model was not found. Pick another one in Setup.');
+    throw new Error(m);
+  }
+  const cand = data.candidates && data.candidates[0];
+  const text = ((cand && cand.content && cand.content.parts) || []).map(p => p.text || '').join('');
+  if (!text) {
+    if (data.promptFeedback && data.promptFeedback.blockReason) throw new Error('That request was blocked for safety. Try different words.');
+    throw new Error('The AI sent an empty answer. Please try again.');
+  }
+  return text;
+}
+async function geminiJSON(opts) {
+  let last;
+  for (const useJson of [true, false, false]) {
+    try { return parseJSON(await gemini(Object.assign({}, opts, { json: useJson }))); }
+    catch (e) { last = e; if (/sign in|busy|limit|Network/i.test(e.message)) throw e; }
+  }
+  throw new Error('The AI answer came back in the wrong shape. Please try again. (' + last.message + ')');
+}
+function parseJSON(t) {
+  t = t.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+  try { return JSON.parse(t); } catch (e) { const m = t.match(/[\[{][\s\S]*[\]}]/); if (m) return JSON.parse(m[0]); throw e; }
+}
+
+/* ---------- files (photos, PDFs, notes) ---------- */
+const ACCEPT = 'image/*,application/pdf,audio/*,text/*,.txt,.md,.csv,.json,.py,.js,.java,.c,.cpp,.html,.css,.xml,.tex,.sql';
+const TEXT_EXT = /\.(txt|md|csv|json|js|ts|py|java|c|cpp|h|html|css|xml|yml|yaml|tex|log|sql|sh)$/i;
+const MIME_GUESS = { pdf: 'application/pdf', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', heic: 'image/heic', mp3: 'audio/mp3', wav: 'audio/wav', m4a: 'audio/aac' };
+const b64 = f => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = () => rej(new Error('Could not read ' + f.name)); r.readAsDataURL(f); });
+async function filesToParts(files) {
+  const parts = [];
+  for (const f of files) {
+    if (/\.(docx?|pptx?|xlsx?)$/i.test(f.name)) throw new Error(f.name + ': Word, PowerPoint and Excel files are not supported directly. Save it as a PDF (or CSV for Excel) and upload that.');
+    if (f.type.startsWith('text/') || TEXT_EXT.test(f.name)) {
+      parts.push({ text: '[File: ' + f.name + ']\n' + (await f.text()).slice(0, 80000) });
+    } else {
+      const ext = (f.name.split('.').pop() || '').toLowerCase();
+      const mime = f.type || MIME_GUESS[ext];
+      if (!mime) throw new Error(f.name + ': this file type is not supported.');
+      parts.push({ inline_data: { mime_type: mime, data: await b64(f) } });
+    }
+  }
+  return parts;
+}
+function attachWidget(id, label = '📎 Add file') {
+  const root = $('#' + id);
+  const w = {
+    files: [],
+    add(list) { for (const f of list) { if (f.size > 10 * 1024 * 1024) { toast(f.name + ' is bigger than 10 MB.', 'err'); continue; } w.files.push(f); } draw(); },
+    clear() { w.files = []; draw(); }
+  };
+  root.innerHTML = '<button type="button" class="btn ghost sm">' + label + '</button><input type="file" hidden multiple accept="' + ACCEPT + '"><span class="att-l" style="display:contents"></span>';
+  const inp = $('input', root), list = $('.att-l', root);
+  $('button', root).onclick = () => inp.click();
+  inp.onchange = () => { w.add(inp.files); inp.value = ''; };
+  function draw() {
+    list.innerHTML = '';
+    w.files.forEach((f, i) => {
+      const s = document.createElement('span'); s.className = 'f';
+      s.innerHTML = '<span>' + esc(f.name) + '</span><button type="button" aria-label="Remove ' + esc(f.name) + '">✕</button>';
+      s.querySelector('button').onclick = () => { w.files.splice(i, 1); draw(); };
+      list.appendChild(s);
+    });
+  }
+  return w;
+}
+
+/* ---------- images ---------- */
+function imgURL(prompt, w = 1024, h = 1024, seed = Math.floor(Math.random() * 1e6)) {
+  return cfg.img.replace('{prompt}', encodeURIComponent(prompt)).replace('{w}', w).replace('{h}', h).replace('{seed}', seed);
+}
+function hashSeed(s) { let x = 7; for (let i = 0; i < s.length; i++) x = (x * 31 + s.charCodeAt(i)) % 1000003; return x; }
+// Pictures: first the Worker's free image AI, then the free public service as a backup.
+let imgWhy = '';
+async function fetchImageURL(prompt, w, h, seed) {
+  imgWhy = '';
+  if (PROXY_URL) {
+    try {
+      const headers = {}; if (AUTH_ON) headers.Authorization = await authHeader();
+      const r = await fetch(PROXY_URL.replace(/\/+$/, '') + '/image?prompt=' + encodeURIComponent(prompt) + '&seed=' + seed, { headers });
+      if (r.ok) { const b = await r.blob(); if (b.type.startsWith('image/')) return URL.createObjectURL(b); imgWhy = 'The Worker did not return a picture.'; }
+      else { const j = await r.json().catch(() => ({})); imgWhy = (j.error && j.error.message) || ('Error ' + r.status); }
+    } catch (e) { imgWhy = e.message; }
+  }
+  return imgURL(prompt, w, h, seed);
+}
+function figure(p) {
+  return '<figure class="gi"><div class="sk"></div><img alt="' + esc(p) + '" data-p="' + esc(p) + '"><figcaption>' + esc(p) + '</figcaption></figure>';
+}
+function hydrateImages(root) {
+  $$('img[data-p]', root).forEach(img => {
+    if (img.dataset.h) return; img.dataset.h = '1';
+    const fig = img.closest('figure');
+    fetchImageURL(img.dataset.p, 768, 768, hashSeed(img.dataset.p)).then(u => {
+      img.onload = () => { const s = fig.querySelector('.sk'); if (s) s.remove(); img.classList.add('in'); };
+      img.onerror = () => { fig.innerHTML = '<div class="imgerr">The picture could not load.' + (imgWhy ? '<br><small>' + esc(imgWhy) + '</small>' : ' Please try again in a moment.') + '</div>'; };
+      img.src = u;
+    });
+  });
+}
+async function downloadURL(url, name) {
+  try {
+    const r = await fetch(url); const b = await r.blob(); const a = document.createElement('a');
+    a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  } catch (e) { window.open(url, '_blank', 'noopener'); }
+}
+function saveText(text, name, type) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+}
+
+/* ---------- markdown (small and safe) ---------- */
+const inl = s => s.replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/(^|[\s(])\*([^*\s][^*]*?)\*(?=$|[\s).,!?:;])/g, '$1<em>$2</em>');
+function mdTable(rows) {
+  const cells = r => r.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+  const isSep = r => /^[\s|:-]+$/.test(r) && r.indexOf('-') >= 0;
+  let h = '<div class="tw"><table>';
+  rows.forEach((r, i) => { if (isSep(r)) return; const tag = i === 0 ? 'th' : 'td'; h += '<tr>' + cells(r).map(c => '<' + tag + '>' + inl(c) + '</' + tag + '>').join('') + '</tr>'; });
+  return h + '</table></div>';
+}
+function md(src) {
+  const imgs = [], codes = [];
+  src = src.replace(/\[\[image:\s*([^\]]+?)\s*\]\]/gi, (m, p) => '\n@@IMG' + (imgs.push(p) - 1) + '@@\n');
+  src = src.replace(/```[\w+-]*\n?([\s\S]*?)```/g, (m, c) => '\n@@CODE' + (codes.push(c.replace(/\n$/, '')) - 1) + '@@\n');
+  const lines = esc(src).split('\n'); let out = '', list = null, para = [], tbl = [];
+  const fP = () => { if (para.length) { out += '<p>' + inl(para.join(' ')) + '</p>'; para = []; } };
+  const fL = () => { if (list) { out += '</' + list + '>'; list = null; } };
+  const fT = () => { if (tbl.length) { out += mdTable(tbl); tbl = []; } };
+  for (const raw of lines) {
+    const l = raw.trimEnd(); let m;
+    if (/^\s*\|.*\|\s*$/.test(l)) { fP(); fL(); tbl.push(l); continue; }
+    fT();
+    if (!l.trim()) { fP(); fL(); continue; }
+    if ((m = l.match(/^@@IMG(\d+)@@$/))) { fP(); fL(); out += figure(imgs[+m[1]]); continue; }
+    if ((m = l.match(/^@@CODE(\d+)@@$/))) { fP(); fL(); out += '<pre><code>' + esc(codes[+m[1]]) + '</code></pre>'; continue; }
+    if ((m = l.match(/^(#{1,4})\s+(.*)$/))) { fP(); fL(); const n = m[1].length + 1; out += '<h' + n + '>' + inl(m[2]) + '</h' + n + '>'; continue; }
+    if ((m = l.match(/^\s*[-*•]\s+(.*)$/))) { fP(); if (list !== 'ul') { fL(); out += '<ul>'; list = 'ul'; } out += '<li>' + inl(m[1]) + '</li>'; continue; }
+    if ((m = l.match(/^\s*\d+[.)]\s+(.*)$/))) { fP(); if (list !== 'ol') { fL(); out += '<ol>'; list = 'ol'; } out += '<li>' + inl(m[1]) + '</li>'; continue; }
+    if ((m = l.match(/^&gt;\s?(.*)$/))) { fP(); fL(); out += '<blockquote>' + inl(m[1]) + '</blockquote>'; continue; }
+    if (/^-{3,}$/.test(l.trim())) { fP(); fL(); out += '<hr>'; continue; }
+    fL(); para.push(l.trim());
+  }
+  fP(); fL(); fT(); return out;
+}
+
+/* =========================================================
+   CHAT
+   ========================================================= */
+const SYS = "You are Brainy, a cheerful, patient AI tutor for school and college students. Explain step by step in simple language, with short examples and analogies. Reply in the same language the student uses. Use Markdown (short headings, bullet lists, tables, code blocks). Write maths in plain text such as x^2, sqrt(x), a/b instead of LaTeX. When the student uploads a file or image, study it carefully and answer about it. If a picture would really help understanding, add a line on its own like [[image: detailed description of the picture]] (at most 2 per answer). Never make up facts. If you are unsure, say so. Encourage the student kindly.";
+const chat = { api: [], log: [], id: store.get('chatid', '') || newId() };
+const chatAtt = attachWidget('chat-attach', '📎 Photo, PDF or notes');
+const SUGGEST = ['Explain photosynthesis like I am 12', 'Solve 2x + 5 = 17 step by step', 'What is a for loop? Show a Python example', '/image a volcano cut in half showing magma'];
+
+function showHero() {
+  const box = $('#msgs');
+  box.innerHTML = '<div class="hero"><svg class="mascot" viewBox="0 0 120 120" aria-hidden="true"><line x1="60" y1="16" x2="60" y2="32" stroke="#231A4F" stroke-width="5" stroke-linecap="round"/><circle class="spark" cx="60" cy="11" r="8" fill="#FFD166" stroke="#231A4F" stroke-width="5"/><rect x="16" y="30" width="88" height="80" rx="30" fill="#8B6BFF" stroke="#231A4F" stroke-width="6"/><rect x="29" y="46" width="62" height="42" rx="18" fill="#fff" stroke="#231A4F" stroke-width="5"/><ellipse class="eye" cx="47" cy="65" rx="6" ry="8" fill="#231A4F"/><ellipse class="eye" cx="73" cy="65" rx="6" ry="8" fill="#231A4F"/><path d="M50 79 Q60 87 70 79" fill="none" stroke="#231A4F" stroke-width="5" stroke-linecap="round"/><circle cx="37" cy="77" r="4" fill="#FF9EC7"/><circle cx="83" cy="77" r="4" fill="#FF9EC7"/></svg><h2>Hi, I am Brainy!</h2><p>Ask me anything about school. I can read your photos and PDFs too.</p><div class="chips" id="sugg"></div></div>';
+  SUGGEST.forEach(s => { const b = document.createElement('button'); b.className = 'chip'; b.textContent = s; b.onclick = () => { $('#chat-in').value = s; sendChat(); }; $('#sugg').appendChild(b); });
+}
+function addMsg(role, text, names = []) {
+  const box = $('#msgs'); const h = $('.hero', box); if (h) h.remove();
+  const d = document.createElement('div'); d.className = 'msg ' + (role === 'user' ? 'me' : 'ai');
+  if (role === 'user') {
+    d.innerHTML = '<div class="bub">' + (names.length ? '<div class="fchips">' + names.map(n => '<span>📎 ' + esc(n) + '</span>').join('') + '</div>' : '') + esc(text).replace(/\n/g, '<br>') + '</div>';
+  } else {
+    d.innerHTML = '<svg class="av"><use href="#bot"/></svg><div class="bub"><div class="body">' + md(text) + '</div><div class="acts"></div></div>';
+    const acts = $('.acts', d);
+    const mk = (label, fn) => { const b = document.createElement('button'); b.className = 'btn ghost sm'; b.textContent = label; b.onclick = fn; acts.appendChild(b); };
+    mk('🔊 Read', () => { if (speechSynthesis.speaking) { speechSynthesis.cancel(); return; } const u = new SpeechSynthesisUtterance(text.replace(/\[\[image:[^\]]*\]\]/g, '').replace(/[*#`|]/g, '')); speechSynthesis.speak(u); });
+    mk('📋 Copy', () => { navigator.clipboard.writeText(text).then(() => toast('Copied!', 'ok')); });
+    mk('🃏 Flashcards', () => { fc.source = text; renderSrc('fc'); go('cards'); genCards(); });
+    mk('📝 Quiz', () => { qz.source = text; renderSrc('qz'); go('quiz'); genQuiz(); });
+  }
+  box.appendChild(d); hydrateImages(d); box.scrollTop = box.scrollHeight; return d;
+}
+let saveT;
+function persistChat() {
+  clearTimeout(saveT);
+  saveT = setTimeout(() => {
+    if (!chat.log.length) return;
+    const first = chat.log.find(m => m.role === 'user');
+    store.set('chatid', chat.id);
+    db.put('chats', chat.id, { title: (first ? first.text : 'Chat').slice(0, 70), messages: chat.log.slice(-80).map(m => ({ role: m.role, text: String(m.text).slice(0, 20000) })), updatedAt: Date.now() }).catch(() => {});
+  }, 400);
+}
+function trimFiles() {
+  let seen = 0;
+  for (let i = chat.api.length - 1; i >= 0; i--) {
+    const m = chat.api[i]; if (m.role !== 'user') continue;
+    if (m.parts.some(p => p.inline_data)) { seen++; if (seen > 3) m.parts = m.parts.map(p => p.inline_data ? { text: '[an earlier file was removed to save space]' } : p); }
+  }
+}
+async function sendChat() {
+  const inp = $('#chat-in'); const text = inp.value.trim(); const files = chatAtt.files.slice();
+  if (!text && !files.length) return;
+  const btn = $('#chat-send');
+  if (/^\/(image|img|draw)\s+/i.test(text)) {
+    const p = text.replace(/^\/\w+\s+/, ''); inp.value = ''; autosize();
+    addMsg('user', text); const reply = '[[image: ' + p + ']]';
+    chat.api.push({ role: 'user', parts: [{ text }] }, { role: 'model', parts: [{ text: reply }] });
+    chat.log.push({ role: 'user', text }, { role: 'model', text: reply }); persistChat(); addMsg('ai', reply); return;
+  }
+  inp.value = ''; autosize(); chatAtt.clear();
+  const userEl = addMsg('user', text || 'Please explain this.', files.map(f => f.name));
+  const typing = document.createElement('div'); typing.className = 'msg ai'; typing.innerHTML = '<svg class="av"><use href="#bot"/></svg><div class="bub"><div class="dots"><span></span><span></span><span></span></div></div>';
+  $('#msgs').appendChild(typing); $('#msgs').scrollTop = 1e9;
+  btn.disabled = true;
+  try {
+    const parts = await filesToParts(files); parts.push({ text: text || 'Please explain this file step by step.' });
+    chat.api.push({ role: 'user', parts });
+    chat.log.push({ role: 'user', text: text || '(sent a file)' });
+    const reply = await gemini({ system: SYS, contents: chat.api });
+    chat.api.push({ role: 'model', parts: [{ text: reply }] }); chat.log.push({ role: 'model', text: reply });
+    trimFiles(); persistChat(); typing.remove(); addMsg('ai', reply);
+  } catch (e) {
+    typing.remove(); userEl.remove();
+    if (chat.api.length && chat.api[chat.api.length - 1].role === 'user') { chat.api.pop(); chat.log.pop(); }
+    inp.value = text; toast(e.message, 'err');
+  } finally { btn.disabled = false; inp.focus(); }
+}
+function autosize() { const t = $('#chat-in'); t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight + 4, 160) + 'px'; }
+function loadChatData(c) {
+  chat.id = c.id; store.set('chatid', c.id);
+  chat.log = (c.messages || []).map(m => ({ role: m.role, text: m.text }));
+  chat.api = chat.log.map(m => ({ role: m.role, parts: [{ text: m.text }] }));
+  while (chat.api.length && chat.api[0].role === 'model') chat.api.shift();
+  $('#msgs').innerHTML = '';
+  if (!chat.log.length) showHero(); else chat.log.forEach(m => addMsg(m.role, m.text));
+}
+async function restoreChat() {
+  let saved = null; try { saved = await db.get('chats', chat.id); } catch (e) {}
+  if (saved && saved.messages && saved.messages.length) loadChatData(saved);
+  else { chat.log = []; chat.api = []; showHero(); }
+}
+$('#chat-send').onclick = sendChat;
+$('#chat-in').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } });
+$('#chat-in').addEventListener('input', autosize);
+$('#chat-clear').onclick = () => { chat.id = newId(); store.set('chatid', chat.id); chat.api = []; chat.log = []; chatAtt.clear(); showHero(); };
+$('#chat-in').addEventListener('paste', e => { const fs = [...(e.clipboardData ? e.clipboardData.files : [])]; if (fs.length) { e.preventDefault(); chatAtt.add(fs); } });
+const chatView = $('#view-chat');
+['dragenter', 'dragover'].forEach(ev => chatView.addEventListener(ev, e => { e.preventDefault(); chatView.classList.add('drop'); }));
+['dragleave', 'drop'].forEach(ev => chatView.addEventListener(ev, e => { e.preventDefault(); chatView.classList.remove('drop'); }));
+chatView.addEventListener('drop', e => { if (e.dataTransfer && e.dataTransfer.files.length) chatAtt.add(e.dataTransfer.files); });
+(function mic() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition; const b = $('#mic');
+  if (!SR) { b.hidden = true; return; }
+  let rec = null;
+  b.onclick = () => {
+    if (rec) { rec.stop(); return; }
+    rec = new SR(); rec.interimResults = true; rec.lang = navigator.language || 'en-US'; b.textContent = '⏹️';
+    rec.onresult = e => { $('#chat-in').value = [...e.results].map(r => r[0].transcript).join(' '); autosize(); };
+    rec.onend = () => { rec = null; b.textContent = '🎤'; }; rec.onerror = () => { rec = null; b.textContent = '🎤'; };
+    rec.start();
+  };
+})();
+
+/* =========================================================
+   IMAGES
+   ========================================================= */
+const STYLES = { 'Photo': 'photorealistic, highly detailed, natural lighting', 'Cartoon': 'colourful cartoon illustration, friendly, bold outlines', 'Textbook': 'clean educational textbook illustration, flat colours, white background', 'Watercolour': 'soft watercolour painting', '3D': 'cute 3D render, pastel colours, soft lighting', 'Pixel art': '16-bit pixel art' };
+const im = { mode: 'art', style: 'Cartoon', size: '1024x1024' };
+(function initImages() {
+  const box = $('#im-style');
+  Object.keys(STYLES).forEach(k => { const b = document.createElement('button'); b.className = 'chip' + (k === im.style ? ' on' : ''); b.textContent = k; b.dataset.v = k; box.appendChild(b); });
+  const wire = (id, key, after) => $('#' + id).addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; $$('.chip', $('#' + id)).forEach(c => c.classList.toggle('on', c === b)); im[key] = b.dataset.v; if (after) after(); });
+  wire('im-style', 'style'); wire('im-size', 'size');
+  wire('im-mode', 'mode', () => { const art = im.mode === 'art'; ['im-style-wrap', 'im-size-wrap', 'im-improve-l'].forEach(id => $('#' + id).hidden = !art); });
+})();
+function addShot(el) { $('#gallery-empty').hidden = true; $('#gallery').prepend(el); }
+async function genImage() {
+  const raw = $('#im-prompt').value.trim();
+  if (!raw) { toast('Describe what you want first.', 'err'); return; }
+  await busy($('#im-go'), '⏳ Working…', async () => {
+    try {
+      if (im.mode === 'svg') {
+        const out = await gemini({
+          system: 'You are an expert scientific illustrator. Reply with ONLY one valid, self-contained SVG (no markdown, no explanation). Use viewBox="0 0 800 600", a light background rectangle, bright friendly colours, thick outlines, and readable sans-serif text labels (font-size 18 or larger) with leader lines to each part. No scripts, no external images or fonts. Make it accurate and uncluttered.',
+          contents: [{ role: 'user', parts: [{ text: 'Draw a labelled diagram: ' + raw }] }], temperature: 0.4
+        });
+        const m = out.match(/<svg[\s\S]*<\/svg>/i); if (!m) throw new Error('The AI did not return a diagram. Try again.');
+        let svg = m[0]; if (!/xmlns=/.test(svg)) svg = svg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+        addSvg(svg, raw, true); return;
+      }
+      let p = raw;
+      if ($('#im-improve').checked && (cfg.key || PROXY_URL)) {
+        try { p = (await gemini({ system: 'You write prompts for an AI image generator. Rewrite the idea as ONE vivid, concrete English prompt of at most 60 words. Keep the meaning exactly. Return only the prompt.', contents: [{ role: 'user', parts: [{ text: raw }] }], temperature: 0.8 })).trim().replace(/^["']|["']$/g, ''); }
+        catch (e) { p = raw; }
+      }
+      const [w, h] = im.size.split('x').map(Number);
+      const full = p + ', ' + STYLES[im.style];
+      addArt(p, full, w, h);
+    } catch (e) { toast(e.message, 'err'); }
+  });
+}
+function addSvg(svg, raw, save) {
+  const src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  const el = document.createElement('div'); el.className = 'shot';
+  el.innerHTML = '<div class="pic"><img class="in" alt="' + esc(raw) + '" src="' + src + '"></div><div class="cap"><p>' + esc(raw) + '</p><div class="chips"></div></div>';
+  const c = $('.chips', el);
+  const mk = (l, f) => { const b = document.createElement('button'); b.className = 'btn ghost sm'; b.textContent = l; b.onclick = f; c.appendChild(b); };
+  mk('⬇ Save SVG', () => saveText(svg, 'diagram.svg', 'image/svg+xml')); mk('🔁 Redo', () => genImage());
+  addShot(el);
+  if (save && svg.length < 300000) db.put('images', newId(), { type: 'svg', prompt: raw, svg, at: Date.now() }).catch(() => {});
+}
+async function addArt(shown, full, w, h, seed = Math.floor(Math.random() * 1e6), save = true) {
+  const el = document.createElement('div'); el.className = 'shot';
+  el.innerHTML = '<div class="pic"><div class="sk"></div><img alt="' + esc(shown) + '"></div><div class="cap"><p>' + esc(shown) + '</p><div class="chips"></div></div>';
+  const img = $('img', el);
+  img.onload = () => { const s = $('.sk', el); if (s) s.remove(); img.classList.add('in'); };
+  img.onerror = () => { $('.pic', el).innerHTML = '<div class="imgerr">The picture could not load.' + (imgWhy ? '<br><small>' + esc(imgWhy) + '</small>' : ' Please try again in a moment.') + '</div>'; };
+  const c = $('.chips', el);
+  const mk = (l, f) => { const b = document.createElement('button'); b.className = 'btn ghost sm'; b.textContent = l; b.onclick = f; c.appendChild(b); };
+  mk('⬇ Save', () => downloadURL(img.src, 'brainy-picture.png')); mk('🎲 New version', () => addArt(shown, full, w, h));
+  mk('📋 Prompt', () => navigator.clipboard.writeText(full).then(() => toast('Prompt copied', 'ok')));
+  addShot(el);
+  img.src = await fetchImageURL(full, w, h, seed);
+  if (save) db.put('images', newId(), { type: 'art', prompt: shown, full, w, h, seed, at: Date.now() }).catch(() => {});
+}
+$('#im-go').onclick = genImage;
+$('#im-prompt').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) genImage(); });
+
+/* =========================================================
+   shared: source pill (text sent over from chat)
+   ========================================================= */
+function renderSrc(k) {
+  const o = k === 'fc' ? fc : qz; const root = $('#' + k + '-src');
+  root.innerHTML = '';
+  if (!o.source) return;
+  root.innerHTML = '<span class="pill">Using the answer from your chat <button aria-label="Remove">✕</button></span>';
+  $('button', root).onclick = () => { o.source = ''; renderSrc(k); };
+}
+
+/* =========================================================
+   FLASHCARDS
+   ========================================================= */
+const fc = { cards: [], i: 0, known: new Set(), title: '', source: '', queue: [] };
+const fcAtt = attachWidget('fc-attach', '📎 Use my notes, PDF or photo');
+const FC_COLORS = ['#FFD166', '#8EE3C8', '#C7B8FF', '#FFA8CE', '#9CC9FF', '#FFB894'];
+const isMobile = () => matchMedia('(max-width:820px)').matches;
+
+async function renderDecks() {
+  const root = $('#fc-decks'); let decks = [];
+  try { decks = await db.list('decks'); } catch (e) {}
+  decks.sort((a, b) => (b.at || 0) - (a.at || 0)); decks = decks.slice(0, 12);
+  if (!decks.length) { root.innerHTML = ''; return; }
+  root.innerHTML = '<label class="l">Your saved decks</label><div class="chips"></div>';
+  decks.forEach(d => { const b = document.createElement('button'); b.className = 'chip'; b.textContent = d.title + ' (' + d.cards.length + ')'; b.onclick = () => startDeck(d.title, d.cards); $('.chips', root).appendChild(b); });
+}
+async function genCards() {
+  const topic = $('#fc-topic').value.trim();
+  if (!topic && !fcAtt.files.length && !fc.source) { toast('Type a topic or add a file first.', 'err'); return; }
+  const n = +$('#fc-n').value, lvl = $('#fc-lvl').value;
+  await busy($('#fc-go'), '⏳ Making cards…', async () => {
+    try {
+      const parts = await filesToParts(fcAtt.files);
+      if (fc.source) parts.push({ text: 'Source material:\n' + fc.source.slice(0, 20000) });
+      parts.push({ text: 'Create exactly ' + n + ' study flashcards ' + (topic ? 'about: "' + topic + '"' : 'from the material provided') + ' for a ' + lvl + ' level student. Return ONLY JSON: {"title": string, "cards": [{"q": string, "a": string, "hint": string}]}. Questions are short and clear. Answers are at most 35 words. Cover key ideas, definitions, formulas and examples. Write in the same language as the topic or material.' });
+      const data = await geminiJSON({ contents: [{ role: 'user', parts }], temperature: 0.6 });
+      const cards = (data.cards || []).filter(c => c.q && c.a); if (!cards.length) throw new Error('No cards came back. Try again.');
+      const title = data.title || topic || 'My deck';
+      await db.put('decks', newId(), { title, cards: cards.map(c => ({ q: String(c.q), a: String(c.a), hint: String(c.hint || '') })), at: Date.now() }).catch(() => {});
+      fc.source = ''; renderSrc('fc'); fcAtt.clear(); renderDecks();
+      startDeck(title, cards);
+    } catch (e) { toast(e.message, 'err'); }
+  });
+}
+function startDeck(title, cards) {
+  fc.title = title; fc.cards = cards.slice(); fc.i = 0; fc.known = new Set();
+  $('#fc-setup').hidden = true; $('#fc-done').hidden = true; $('#fc-play').hidden = false;
+  $('#fc-title').textContent = title; fcShow(true);
+}
+function fcShow(instant) {
+  const c = fc.cards[fc.i], card = $('#fc-card');
+  const swap = () => {
+    $('#fc-q').textContent = c.q; $('#fc-a').textContent = c.a;
+    const hint = $('#fc-hint'); hint.hidden = true; hint.textContent = c.hint || ''; $('#fc-hintb').hidden = !c.hint;
+    card.style.setProperty('--fc', FC_COLORS[fc.i % FC_COLORS.length]);
+  };
+  if (!instant && card.classList.contains('flip')) { card.classList.remove('flip'); setTimeout(swap, 300); } else { card.classList.remove('flip'); swap(); }
+  $('#fc-count').textContent = 'Card ' + (fc.i + 1) + ' of ' + fc.cards.length + ' · Known ' + fc.known.size;
+  $('#fc-bar').style.width = (fc.i / fc.cards.length * 100) + '%';
+}
+function fcNext() { if (fc.i < fc.cards.length - 1) { fc.i++; fcShow(); } else fcFinish(); }
+function fcFinish() {
+  $('#fc-play').hidden = true; const d = $('#fc-done'); d.hidden = false;
+  const k = fc.known.size, n = fc.cards.length, missed = fc.cards.filter((c, i) => !fc.known.has(i));
+  d.innerHTML = '<div class="big">' + (k === n ? '🎉' : '💪') + '</div><h2 style="font:700 30px var(--fd);margin:8px 0">You know ' + k + ' of ' + n + '</h2><p class="hint">' + (k === n ? 'Perfect round! Time to test yourself.' : 'The ones you missed are worth another go.') + '</p><div class="ctrls"></div>';
+  const c = $('.ctrls', d); const mk = (l, cls, f) => { const b = document.createElement('button'); b.className = 'btn ' + cls; b.textContent = l; b.onclick = f; c.appendChild(b); };
+  if (missed.length) mk('Practice the ' + missed.length + ' I missed', '', () => startDeck(fc.title, missed));
+  mk('Start again', 'ghost', () => startDeck(fc.title, fc.cards));
+  mk('Quiz me on this ▶', 'ghost', () => { $('#qz-topic').value = fc.title; go('quiz'); genQuiz(); });
+  mk('＋ New deck', 'ghost', fcReset);
+  if (k === n) confetti();
+}
+function fcReset() { $('#fc-play').hidden = true; $('#fc-done').hidden = true; $('#fc-setup').hidden = false; }
+$('#fc-go').onclick = genCards;
+$('#fc-topic').addEventListener('keydown', e => { if (e.key === 'Enter') genCards(); });
+$('#fc-card').onclick = () => $('#fc-card').classList.toggle('flip');
+$('#fc-hintb').onclick = e => { e.stopPropagation(); $('#fc-hint').hidden = false; $('#fc-hintb').hidden = true; };
+$('#fc-got').onclick = () => { fc.known.add(fc.i); fcNext(); };
+$('#fc-again').onclick = () => { fc.known.delete(fc.i); fcNext(); };
+$('#fc-prev').onclick = () => { if (fc.i > 0) { fc.i--; fcShow(); } };
+$('#fc-shuffle').onclick = () => { fc.cards = shuffle(fc.cards); fc.i = 0; fc.known = new Set(); fcShow(); };
+$('#fc-new').onclick = fcReset;
+document.addEventListener('keydown', e => {
+  if (!$('#view-cards').classList.contains('on') || $('#fc-play').hidden) return;
+  if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+  if (e.key === ' ') { e.preventDefault(); $('#fc-card').classList.toggle('flip'); }
+  if (e.key === 'ArrowRight') fcNext(); if (e.key === 'ArrowLeft' && fc.i > 0) { fc.i--; fcShow(); }
+});
+
+/* =========================================================
+   QUIZ
+   ========================================================= */
+const qz = { qs: [], i: 0, score: 0, streak: 0, best: 0, missed: [], done: false, source: '', title: '' };
+const qzAtt = attachWidget('qz-attach', '📎 Use my notes, PDF or photo');
+async function genQuiz() {
+  const topic = $('#qz-topic').value.trim();
+  if (!topic && !qzAtt.files.length && !qz.source) { toast('Type a topic or add a file first.', 'err'); return; }
+  const n = +$('#qz-n').value, lvl = $('#qz-lvl').value;
+  await busy($('#qz-go'), '⏳ Writing questions…', async () => {
+    try {
+      const parts = await filesToParts(qzAtt.files);
+      if (qz.source) parts.push({ text: 'Source material:\n' + qz.source.slice(0, 20000) });
+      parts.push({ text: 'Write a ' + lvl + ' multiple-choice quiz with exactly ' + n + ' questions ' + (topic ? 'about: "' + topic + '"' : 'based on the material provided') + '. Mix recall, understanding and application questions. Each question has exactly 4 options and exactly one correct answer. Return ONLY JSON: {"title": string, "questions": [{"q": string, "options": [string,string,string,string], "answer": number (0-3, index of the correct option), "explain": string (1-2 sentences why)}]}. Write in the same language as the topic or material.' });
+      const data = await geminiJSON({ contents: [{ role: 'user', parts }], temperature: 0.6 });
+      const qs = (data.questions || []).filter(q => q.q && Array.isArray(q.options) && q.options.length >= 2 && Number.isInteger(q.answer) && q.options[q.answer] !== undefined);
+      if (!qs.length) throw new Error('No questions came back. Try again.');
+      qz.qs = qs.map(q => { const opts = shuffle(q.options.map((t, i) => ({ t, ok: i === q.answer }))); return { q: q.q, opts, explain: q.explain || '' }; });
+      qz.title = data.title || topic || 'Quiz'; qz.i = 0; qz.score = 0; qz.streak = 0; qz.best = 0; qz.missed = [];
+      qz.source = ''; renderSrc('qz'); qzAtt.clear();
+      $('#qz-setup').hidden = true; $('#qz-done').hidden = true; $('#qz-play').hidden = false; qzShow();
+    } catch (e) { toast(e.message, 'err'); }
+  });
+}
+function qzShow() {
+  const q = qz.qs[qz.i]; qz.done = false;
+  $('#qz-q').textContent = 'Q ' + (qz.i + 1) + '/' + qz.qs.length; $('#qz-score').textContent = '⭐ ' + qz.score; $('#qz-streak').textContent = '🔥 ' + qz.streak;
+  $('#qz-bar').style.width = (qz.i / qz.qs.length * 100) + '%';
+  $('#qz-text').textContent = q.q; $('#qz-exp').innerHTML = ''; $('#qz-next').hidden = true;
+  const box = $('#qz-opts'); box.innerHTML = '';
+  q.opts.forEach((o, i) => {
+    const b = document.createElement('button'); b.className = 'opt'; b.innerHTML = '<b>' + 'ABCD'[i] + '</b><span>' + esc(o.t) + '</span>';
+    b.onclick = () => qzPick(i); box.appendChild(b);
+  });
+}
+function qzPick(i) {
+  if (qz.done) return; qz.done = true;
+  const q = qz.qs[qz.i], btns = $$('.opt', $('#qz-opts')); btns.forEach(b => b.disabled = true);
+  const ok = q.opts[i].ok; btns[i].classList.add(ok ? 'right' : 'wrong');
+  if (!ok) { btns[q.opts.findIndex(o => o.ok)].classList.add('right'); qz.streak = 0; qz.missed.push(q); }
+  else { qz.score++; qz.streak++; qz.best = Math.max(qz.best, qz.streak); }
+  $('#qz-score').textContent = '⭐ ' + qz.score; $('#qz-streak').textContent = '🔥 ' + qz.streak;
+  $('#qz-exp').innerHTML = '<div class="explain"><b>' + (ok ? 'Yes! ' : 'Not quite. ') + '</b>' + esc(q.explain) + '</div>';
+  const nx = $('#qz-next'); nx.hidden = false; nx.textContent = qz.i < qz.qs.length - 1 ? 'Next ▶' : 'See my score 🎉'; nx.focus();
+}
+function qzFinish() {
+  $('#qz-play').hidden = true; const d = $('#qz-done'); d.hidden = false;
+  const n = qz.qs.length, pct = Math.round(qz.score / n * 100);
+  db.put('quizzes', newId(), { title: qz.title, score: qz.score, total: n, pct, best: qz.best, at: Date.now() }).catch(() => {});
+  const msg = pct === 100 ? 'Flawless!' : pct >= 70 ? 'Great work!' : pct >= 40 ? 'Getting there!' : 'Good start. Practice makes progress.';
+  d.innerHTML = '<div class="big">' + (pct >= 70 ? '🏆' : '🌱') + '</div><h2 style="font:700 32px var(--fd);margin:8px 0 2px">' + qz.score + ' / ' + n + ' (' + pct + '%)</h2><p class="hint" style="margin:0">' + msg + ' Best streak: 🔥 ' + qz.best + '</p>' +
+    (qz.missed.length ? '<div class="review"><b style="font:600 18px var(--fd)">Review what you missed</b>' + qz.missed.map(q => '<div class="r"><b>' + esc(q.q) + '</b><br>✅ ' + esc(q.opts.find(o => o.ok).t) + '<br><span style="color:var(--muted)">' + esc(q.explain) + '</span></div>').join('') + '</div>' : '') + '<div class="ctrls"></div>';
+  const c = $('.ctrls', d); const mk = (l, cls, f) => { const b = document.createElement('button'); b.className = 'btn ' + cls; b.textContent = l; b.onclick = f; c.appendChild(b); };
+  mk('Try again', '', () => { $('#qz-topic').value = $('#qz-topic').value || qz.title; genQuiz(); });
+  if (qz.missed.length) mk('Make flashcards to study', 'ghost', () => { $('#fc-topic').value = qz.title; fc.source = qz.missed.map(q => q.q + ' Answer: ' + q.opts.find(o => o.ok).t + '. ' + q.explain).join('\n'); renderSrc('fc'); go('cards'); genCards(); });
+  mk('New quiz', 'ghost', () => { $('#qz-done').hidden = true; $('#qz-setup').hidden = false; });
+  if (pct >= 70) confetti();
+}
+$('#qz-go').onclick = genQuiz;
+$('#qz-topic').addEventListener('keydown', e => { if (e.key === 'Enter') genQuiz(); });
+$('#qz-next').onclick = () => { if (qz.i < qz.qs.length - 1) { qz.i++; qzShow(); } else qzFinish(); };
+
+/* =========================================================
+   LABS
+   ========================================================= */
+const IDEAS = {
+  chemistry: ['Mix baking soda and vinegar and show the CO2 bubbles', 'Titrate HCl with NaOH using an indicator', 'Build a water molecule from H and O atoms', 'Show how temperature changes reaction speed', 'Balance the equation H2 + O2 → H2O with atoms'],
+  physics: ['A pendulum where I can change length and gravity', 'Ohm’s law circuit with a voltage slider and a bulb', 'Two balls colliding with adjustable mass and bounciness', 'Waves from two sources interfering', 'A block on a ramp with friction'],
+  cs: ['Show binary search step by step', 'A stack and queue playground with push and pop', 'A JavaScript code playground with a Run button and output', 'Show how a for loop works with a counter', 'Draw a binary tree and traverse it'],
+  maths: ['Plot y = a·sin(bx) with sliders', 'Pythagoras theorem with a draggable triangle', 'Roll two dice 1000 times and show the graph', 'A pizza that I can slice into fractions', 'Show the area of a circle as it grows']
+};
+const SUBJ_NAME = { chemistry: 'Chemistry', physics: 'Physics', cs: 'Computer Science', maths: 'Mathematics' };
+const SUBJ_HINT = {
+  chemistry: 'Use a virtual lab bench with beakers, flasks, colours, particles and safe simulated reactions. Show quantities, units, balanced equations and what is happening at particle level.',
+  physics: 'Use real formulas and SI units, animate motion or fields with canvas, draw vectors/arrows where useful, and show live measured values (and a small graph when it helps).',
+  cs: 'Visualise algorithms or data structures step by step with controls to step, play, pause and change speed. If a code playground is requested, let the student write JavaScript and run it, showing output or errors safely inside the page.',
+  maths: 'Use clear graphs or geometry with draggable or slider-controlled inputs, show the formula being used and live calculated values.'
+};
+const lab = { subject: 'chemistry', html: '', id: '', title: '' };
+function drawIdeas() {
+  const box = $('#lab-ideas'); box.innerHTML = '';
+  IDEAS[lab.subject].forEach(t => { const b = document.createElement('button'); b.className = 'chip idea'; b.textContent = t; b.onclick = () => { $('#lab-prompt').value = t; $('#lab-prompt').focus(); }; box.appendChild(b); });
+}
+$('#subjects').addEventListener('click', e => { const b = e.target.closest('.subj'); if (!b) return; $$('.subj').forEach(s => s.classList.toggle('on', s === b)); lab.subject = b.dataset.s; drawIdeas(); });
+function showLab(html) {
+  lab.html = html; $('#lab-ph').hidden = true; const f = $('#lab-frame'); f.hidden = false; f.srcdoc = html; $('#lab-tools').hidden = false;
+}
+function saveLab() {
+  if (!lab.id || lab.html.length > 900000) return;
+  db.put('labs', lab.id, { subject: lab.subject, title: (lab.title || 'Lab').slice(0, 90), html: lab.html, at: Date.now() }).catch(() => {});
+}
+function cleanHTML(t) {
+  t = t.trim().replace(/^```(?:html)?\s*/i, '').replace(/```\s*$/, '');
+  const i = t.search(/<!DOCTYPE|<html/i); if (i > 0) t = t.slice(i);
+  if (!/<\/html>/i.test(t)) throw new Error('The lab was cut off. Please try again with a simpler idea.');
+  return t;
+}
+const LAB_SYS = 'You are an expert STEM teacher and front-end developer. Build ONE self-contained interactive HTML5 lab or simulation for students. Output ONLY the complete HTML document, starting with <!DOCTYPE html>. No markdown fences, no commentary. Rules: vanilla JavaScript only with canvas or inline SVG; no external libraries, fonts, images or network requests; do not use localStorage, alert, prompt or confirm. Make it colourful, friendly and responsive (works on phones and wide screens, canvas scales with the width). Include: a short title, a one or two line "What to do" instruction, interactive controls (sliders, buttons, dropdowns), live readouts with units, smooth animation, a Reset button, and a small "What is happening?" panel that updates as the student experiments. Science and maths must be correct. The code must run without errors.';
+async function buildLab(instruction, prev) {
+  const btn = prev ? $('#lab-apply') : $('#lab-go');
+  await busy(btn, '⏳ Building…', async () => {
+    $('#lab-load').hidden = false; $('#lab-load-t').textContent = prev ? 'Updating your lab…' : 'Mixing your lab…';
+    try {
+      const content = prev
+        ? 'Here is the current lab:\n' + prev + '\n\nChange it like this: ' + instruction + '\nReturn the FULL updated HTML document.'
+        : 'Subject: ' + SUBJ_NAME[lab.subject] + '. Guidance: ' + SUBJ_HINT[lab.subject] + '\nBuild this lab or experiment: ' + instruction;
+      const ask = () => gemini({ system: LAB_SYS, contents: [{ role: 'user', parts: [{ text: content }] }], temperature: 0.5 });
+      let html; try { html = cleanHTML(await ask()); } catch (e1) { if (!/cut off/.test(e1.message)) throw e1; html = cleanHTML(await ask()); }
+      showLab(html); if (prev) $('#lab-edit').value = '';
+      if (!prev) { lab.id = newId(); lab.title = instruction; } else if (!lab.id) lab.id = newId();
+      saveLab();
+      $('#stage').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) { toast(e.message, 'err'); } finally { $('#lab-load').hidden = true; }
+  });
+}
+$('#lab-go').onclick = () => { const t = $('#lab-prompt').value.trim(); if (!t) { toast('Describe your experiment or pick an idea.', 'err'); return; } buildLab(t, ''); };
+$('#lab-apply').onclick = () => { const t = $('#lab-edit').value.trim(); if (!t) { toast('Say what to change.', 'err'); return; } buildLab(t, lab.html); };
+$('#lab-edit').addEventListener('keydown', e => { if (e.key === 'Enter') $('#lab-apply').click(); });
+$('#lab-starter').onclick = () => { lab.id = ''; lab.title = 'Ready-made ' + SUBJ_NAME[lab.subject] + ' lab'; showLab(STARTERS[lab.subject]); $('#stage').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+$('#lab-full').onclick = () => { const f = $('#lab-frame'); (f.requestFullscreen || f.webkitRequestFullscreen || (() => toast('Full screen is not available here.', 'err'))).call(f); };
+$('#lab-save').onclick = () => saveText(lab.html, 'my-lab.html', 'text/html');
+
+/* =========================================================
+   SETTINGS
+   ========================================================= */
+function loadSettings() { $('#set-key').value = cfg.key; $('#set-model').value = cfg.model; $('#set-img').value = cfg.img; }
+$('#set-show').onclick = () => { const k = $('#set-key'); const show = k.type === 'password'; k.type = show ? 'text' : 'password'; $('#set-show').textContent = show ? 'Hide' : 'Show'; };
+$('#set-save').onclick = async () => {
+  cfg.key = $('#set-key').value.trim(); cfg.model = $('#set-model').value.trim() || DEFAULT_MODEL; cfg.img = $('#set-img').value.trim() || DEFAULT_IMG;
+  store.set('key', cfg.key); store.set('model', cfg.model); store.set('img', cfg.img); updateKeybar();
+  if (!cfg.key) { toast('Saved. Add a key to switch on the AI.', 'ok'); return; }
+  await busy($('#set-save'), '⏳ Testing…', async () => {
+    try { await gemini({ contents: [{ role: 'user', parts: [{ text: 'Say hello in five words.' }] }] }); toast('Your key works. Brainy is ready! 🎉', 'ok'); confetti(); }
+    catch (e) { toast(e.message, 'err'); }
+  });
+};
+$('#set-reset-img').onclick = () => { $('#set-img').value = DEFAULT_IMG; };
+$('#set-wipe').onclick = () => { if (confirm('Erase your key, chat history and saved decks from this browser?')) { store.wipe(); location.reload(); } };
+
+/* =========================================================
+   ACCOUNTS (Firebase Auth over plain web requests)
+   ========================================================= */
+const AUTH_MSG = {
+  EMAIL_EXISTS: 'That email already has an account. Try signing in.',
+  INVALID_LOGIN_CREDENTIALS: 'Wrong email or password.', INVALID_PASSWORD: 'Wrong email or password.', EMAIL_NOT_FOUND: 'No account with that email.',
+  WEAK_PASSWORD: 'Please use at least 6 characters.', INVALID_EMAIL: 'That email does not look right.', MISSING_PASSWORD: 'Type your password.',
+  TOO_MANY_ATTEMPTS_TRY_LATER: 'Too many tries. Please wait a few minutes.', USER_DISABLED: 'This account is switched off.',
+  OPERATION_NOT_ALLOWED: 'Email sign-in is not switched on in Firebase yet.', ADMIN_ONLY_OPERATION: 'Email sign-in is not switched on in Firebase yet.'
+};
+function fbMsg(d) { const m = (d && d.error && d.error.message) || ''; return AUTH_MSG[m.split(' ')[0]] || ('Could not finish (' + (m || 'network problem') + ').'); }
+async function fbAuth(path, body) {
+  let r; try { r = await fetch('https://identitytoolkit.googleapis.com/v1/' + path + '?key=' + encodeURIComponent(FIREBASE.apiKey), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); }
+  catch (e) { throw new Error('Network problem. Check your internet connection.'); }
+  const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(fbMsg(d)); return d;
+}
+let refreshP = null;
+async function getToken() {
+  const u = auth.user; if (!u) { showGate(); throw new Error('Please sign in.'); }
+  if (Date.now() < u.exp - 60000) return u.idToken;
+  if (!refreshP) {
+    refreshP = (async () => {
+      let r, d;
+      try {
+        r = await fetch('https://securetoken.googleapis.com/v1/token?key=' + encodeURIComponent(FIREBASE.apiKey), { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'grant_type=refresh_token&refresh_token=' + encodeURIComponent(u.refreshToken) });
+        d = await r.json();
+      } catch (e) { throw new Error('Network problem. Check your internet connection.'); }
+      if (!r.ok) { signOutLocal(); showGate('Please sign in again.'); throw new Error('Please sign in again.'); }
+      u.idToken = d.id_token; u.refreshToken = d.refresh_token; u.exp = Date.now() + (+d.expires_in || 3600) * 1000; store.set('session', u);
+      return u.idToken;
+    })().finally(() => { refreshP = null; });
+  }
+  return refreshP;
+}
+async function authHeader() { return AUTH_ON ? 'Bearer ' + await getToken() : ''; }
+function signOutLocal() { store.set('session', null); store.set('chatid', ''); auth.user = null; }
+
+const gate = { mode: 'login' };
+function gerr(t) { $('#g-err').textContent = t || ''; }
+function setGateMode(m) {
+  gate.mode = m; gerr('');
+  $$('#g-tabs .chip').forEach(c => c.classList.toggle('on', c.dataset.m === m));
+  $('#g-name-w').hidden = m !== 'register';
+  $('#g-go').textContent = m === 'register' ? 'Create my account' : 'Sign in';
+  $('#g-pw').autocomplete = m === 'register' ? 'new-password' : 'current-password';
+  $('#g-reset').hidden = m === 'register';
+}
+function showGate(msg) { $('#gate').hidden = false; setGateMode('login'); if (msg) gerr(msg); }
+async function gateSubmit() {
+  const email = $('#g-email').value.trim(), pw = $('#g-pw').value, name = $('#g-name').value.trim();
+  if (!email || !pw) { gerr('Type your email and password.'); return; }
+  if (gate.mode === 'register' && !name) { gerr('Type your name.'); return; }
+  gerr('');
+  await busy($('#g-go'), '⏳ One moment…', async () => {
+    try {
+      let d;
+      if (gate.mode === 'register') {
+        d = await fbAuth('accounts:signUp', { email, password: pw, returnSecureToken: true });
+        await fbAuth('accounts:update', { idToken: d.idToken, displayName: name, returnSecureToken: false }).catch(() => {});
+        d.displayName = name;
+      } else d = await fbAuth('accounts:signInWithPassword', { email, password: pw, returnSecureToken: true });
+      auth.user = { uid: d.localId, email: d.email || email, name: d.displayName || '', idToken: d.idToken, refreshToken: d.refreshToken, exp: Date.now() + (+d.expiresIn || 3600) * 1000 };
+      store.set('session', auth.user); $('#g-pw').value = '';
+      afterLogin(); toast('Welcome' + (auth.user.name ? ', ' + auth.user.name : '') + '! 🎉', 'ok');
+    } catch (e) { gerr(e.message); }
+  });
+}
+$('#g-tabs').addEventListener('click', e => { const b = e.target.closest('.chip'); if (b) setGateMode(b.dataset.m); });
+$('#g-go').onclick = gateSubmit;
+['g-email', 'g-pw', 'g-name'].forEach(id => $('#' + id).addEventListener('keydown', e => { if (e.key === 'Enter') gateSubmit(); }));
+$('#g-reset').onclick = async () => {
+  const email = $('#g-email').value.trim(); if (!email) { gerr('Type your email above first.'); return; }
+  try { await fbAuth('accounts:sendOobCode', { requestType: 'PASSWORD_RESET', email }); gerr(''); toast('We sent a reset link to ' + email + '. Check your inbox and spam.', 'ok'); }
+  catch (e) { gerr(e.message); }
+};
+$('#signout').onclick = () => { signOutLocal(); location.reload(); };
+
+/* =========================================================
+   DATABASE (Firestore over plain web requests, or this device)
+   ========================================================= */
+const FS_BASE = 'https://firestore.googleapis.com/v1/projects/' + encodeURIComponent(FIREBASE.projectId) + '/databases/(default)/documents';
+function fsEnc(v) {
+  if (v === null || v === undefined) return { nullValue: null };
+  if (typeof v === 'string') return { stringValue: v };
+  if (typeof v === 'boolean') return { booleanValue: v };
+  if (typeof v === 'number') return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
+  if (Array.isArray(v)) return { arrayValue: { values: v.map(fsEnc) } };
+  return { mapValue: { fields: Object.fromEntries(Object.entries(v).map(([k, x]) => [k, fsEnc(x)])) } };
+}
+function fsDec(f) {
+  if ('stringValue' in f) return f.stringValue;
+  if ('integerValue' in f) return Number(f.integerValue);
+  if ('doubleValue' in f) return f.doubleValue;
+  if ('booleanValue' in f) return f.booleanValue;
+  if ('arrayValue' in f) return (f.arrayValue.values || []).map(fsDec);
+  if ('mapValue' in f) return Object.fromEntries(Object.entries(f.mapValue.fields || {}).map(([k, x]) => [k, fsDec(x)]));
+  if ('timestampValue' in f) return f.timestampValue;
+  return null;
+}
+const fsDoc = d => { const o = Object.fromEntries(Object.entries(d.fields || {}).map(([k, x]) => [k, fsDec(x)])); o.id = d.name.split('/').pop(); return o; };
+async function fsCall(method, path, body) {
+  const t = await getToken(); let r;
+  try { r = await fetch(FS_BASE + '/' + path, { method, headers: { Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined }); }
+  catch (e) { throw new Error('Network problem. Check your internet connection.'); }
+  if (r.status === 404) return null;
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error((d.error && d.error.message) || ('Database error ' + r.status));
+  return d;
+}
+const dbPath = (col, id) => 'users/' + auth.user.uid + '/' + col + (id ? '/' + id : '');
+const db = {
+  async put(col, id, obj) {
+    if (!AUTH_ON) { const m = store.get('db:' + col, {}); m[id] = obj; store.set('db:' + col, m); return; }
+    await fsCall('PATCH', dbPath(col, id), { fields: fsEnc(obj).mapValue.fields });
+  },
+  async get(col, id) {
+    if (!AUTH_ON) { const o = store.get('db:' + col, {})[id]; return o ? Object.assign({ id }, o) : null; }
+    const d = await fsCall('GET', dbPath(col, id)); return d && d.fields ? fsDoc(d) : null;
+  },
+  async list(col) {
+    if (!AUTH_ON) return Object.entries(store.get('db:' + col, {})).map(([id, o]) => Object.assign({ id }, o));
+    const d = await fsCall('GET', dbPath(col) + '?pageSize=100'); return d && d.documents ? d.documents.map(fsDoc) : [];
+  },
+  async del(col, id) {
+    if (!AUTH_ON) { const m = store.get('db:' + col, {}); delete m[id]; store.set('db:' + col, m); return; }
+    await fsCall('DELETE', dbPath(col, id));
+  }
+};
+
+/* =========================================================
+   HISTORY
+   ========================================================= */
+const H_TABS = [['chats', '💬 Chats'], ['decks', '🃏 Flashcards'], ['quizzes', '📝 Quizzes'], ['labs', '🔬 Labs'], ['images', '🎨 Pictures']];
+let hTab = 'chats';
+function renderAcct() {
+  const note = $('#acct-note'), so = $('#signout');
+  if (AUTH_ON && auth.user) { note.textContent = 'Signed in as ' + (auth.user.name ? auth.user.name + ' · ' : '') + auth.user.email + '. Your work follows you on any device.'; so.hidden = false; }
+  else { note.textContent = 'Your history is saved on this device only.'; so.hidden = true; }
+}
+async function renderHistory() {
+  renderAcct();
+  const tabs = $('#h-tabs'); tabs.innerHTML = '';
+  H_TABS.forEach(([k, l]) => { const b = document.createElement('button'); b.className = 'chip' + (k === hTab ? ' on' : ''); b.textContent = l; b.onclick = () => { hTab = k; renderHistory(); }; tabs.appendChild(b); });
+  const box = $('#h-list'), mine = hTab;
+  if (AUTH_ON && !auth.user) { box.innerHTML = ''; return; }
+  box.innerHTML = '<div class="dots"><span></span><span></span><span></span></div>';
+  let items = [];
+  try { items = await db.list(mine); } catch (e) { if (mine === hTab) box.innerHTML = '<div class="empty"><b>Could not load your history</b>' + esc(e.message) + '</div>'; return; }
+  if (mine !== hTab) return;
+  items.sort((a, b) => (b.updatedAt || b.at || 0) - (a.updatedAt || a.at || 0));
+  if (!items.length) { box.innerHTML = '<div class="empty"><b>Nothing saved yet</b>The things you make will show up here.</div>'; return; }
+  box.innerHTML = '';
+  items.forEach(it => {
+    const when = new Date(it.updatedAt || it.at || Date.now()).toLocaleString();
+    let title = it.title || it.prompt || 'Untitled', meta = when, openLabel = 'Open', open = () => {};
+    if (mine === 'chats') { meta = (it.messages || []).length + ' messages · ' + when; open = () => { loadChatData(it); go('chat'); }; }
+    if (mine === 'decks') { meta = (it.cards || []).length + ' cards · ' + when; open = () => { startDeck(it.title, it.cards); go('cards'); }; }
+    if (mine === 'quizzes') { meta = 'Score ' + it.score + '/' + it.total + ' (' + it.pct + '%) · ' + when; openLabel = 'Practise again'; open = () => { $('#qz-topic').value = it.title; go('quiz'); }; }
+    if (mine === 'labs') { meta = (SUBJ_NAME[it.subject] || it.subject) + ' · ' + when; open = () => { const s = $('.subj[data-s="' + it.subject + '"]'); if (s) s.click(); lab.id = it.id; lab.title = it.title; go('labs'); showLab(it.html); }; }
+    if (mine === 'images') { meta = (it.type === 'svg' ? 'Labelled diagram' : 'Picture') + ' · ' + when; openLabel = 'Show'; open = () => { go('images'); if (it.type === 'svg') addSvg(it.svg, it.prompt, false); else addArt(it.prompt, it.full, it.w, it.h, it.seed, false); }; }
+    const row = document.createElement('div'); row.className = 'hrow';
+    row.innerHTML = '<div class="t"><b>' + esc(title) + '</b><span>' + esc(meta) + '</span></div>';
+    const b1 = document.createElement('button'); b1.className = 'btn sm'; b1.textContent = openLabel; b1.onclick = open;
+    const b2 = document.createElement('button'); b2.className = 'btn ghost sm'; b2.textContent = '🗑 Delete';
+    b2.onclick = async () => { if (!confirm('Delete this from your history?')) return; try { await db.del(mine, it.id); } catch (e) { toast(e.message, 'err'); } if (mine === 'chats' && it.id === chat.id) { chat.id = newId(); store.set('chatid', chat.id); chat.api = []; chat.log = []; showHero(); } renderHistory(); if (mine === 'decks') renderDecks(); };
+    row.append(b1, b2); box.appendChild(row);
+  });
+}
+
+/* =========================================================
+   CONNECTION CHECK
+   ========================================================= */
+async function runChecks() {
+  const out = $('#chk-out'); out.innerHTML = '';
+  const line = (ok, name, msg) => { const r = document.createElement('div'); r.className = 'hrow'; r.innerHTML = '<div class="t"><b>' + (ok ? '✅ ' : '❌ ') + esc(name) + '</b><span>' + esc(msg || '') + '</span></div>'; out.appendChild(r); };
+  const step = async (name, fn) => { try { line(true, name, await fn()); } catch (e) { line(false, name, e.message); } };
+  const base = PROXY_URL.replace(/\/+$/, '');
+  await step('This app version', async () => 'Accounts ' + (AUTH_ON ? 'ON' : 'OFF') + ' · Worker ' + (PROXY_URL ? 'connected' : 'not set'));
+  if (AUTH_ON) await step('Signed in', async () => { if (!auth.user) throw new Error('You are not signed in.'); await getToken(); return auth.user.email; });
+  if (PROXY_URL) await step('Worker health', async () => {
+    const r = await fetch(base + '/'); const j = await r.json();
+    if (!j.keySet) throw new Error('The Worker has no GEMINI_API_KEY secret.');
+    return 'key set · pictures ' + (j.picturesReady ? 'ready' : 'NOT switched on (add Workers AI binding named AI)') + ' · sign-in ' + (j.signInRequired ? 'required' : 'not required') + ' · model ' + (j.workingModel || 'not chosen yet');
+  });
+  await step('Chat', async () => (await gemini({ contents: [{ role: 'user', parts: [{ text: 'Say OK' }] }] })).trim().slice(0, 40));
+  await step('Flashcards and quizzes (JSON)', async () => JSON.stringify(await geminiJSON({ contents: [{ role: 'user', parts: [{ text: 'Return ONLY JSON: {"ok": true}' }] }], temperature: 0 })));
+  await step('Labs (long answer)', async () => { const t = await gemini({ contents: [{ role: 'user', parts: [{ text: 'Write a tiny complete HTML page that says hello. Output only the HTML.' }] }] }); return t.length + ' characters received'; });
+  if (PROXY_URL) await step('Pictures (Worker)', async () => {
+    const headers = {}; if (AUTH_ON) headers.Authorization = await authHeader();
+    const r = await fetch(base + '/image?prompt=red%20apple&seed=1', { headers });
+    if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error((j.error && j.error.message) || ('Error ' + r.status)); }
+    const b = await r.blob(); if (!b.type.startsWith('image/')) throw new Error('No picture came back.'); return 'picture received (' + Math.round(b.size / 1024) + ' KB)';
+  });
+  await step('History database', async () => { await db.put('diag', 't1', { a: 1 }); const g = await db.get('diag', 't1'); await db.del('diag', 't1'); if (!g) throw new Error('Saved but could not read it back.'); return 'saved and read back'; });
+}
+$('#chk-go').onclick = () => busy($('#chk-go'), '⏳ Checking…', runChecks);
+
+/* ---------- start ---------- */
+function afterLogin() {
+  $('#gate').hidden = true;
+  chat.id = store.get('chatid', '') || newId();
+  showHero(); renderDecks(); restoreChat(); renderAcct();
+}
+if (PROXY_URL) { $('.nav [data-go=settings]').hidden = true; }
+drawIdeas(); if (!PROXY_URL) loadSettings(); updateKeybar(); setGateMode('login');
+if (AUTH_ON && !auth.user) { showHero(); showGate(); } else afterLogin();
+{
+  const hh = (location.hash || '').slice(1).replace(/[^a-z]/g, '');
+  go(hh && $('#view-' + hh) && !(PROXY_URL && hh === 'settings') ? hh : 'chat');
+}
+</script>
+</body>
+</html>
