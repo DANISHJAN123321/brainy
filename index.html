@@ -485,7 +485,29 @@ function draw(now){
  });
  requestAnimationFrame(draw)}
 requestAnimationFrame(draw);
-<\/script></body></html>`,
+<\/script></body><body><script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyDY1cHiDQT68Z2O5vX_fUARV4DZx-th3Xg",
+    authDomain: "brainy-your-ai-study-buddy.firebaseapp.com",
+    projectId: "brainy-your-ai-study-buddy",
+    storageBucket: "brainy-your-ai-study-buddy.firebasestorage.app",
+    messagingSenderId: "600925887048",
+    appId: "1:600925887048:web:75e3adcae997e7d334d67d",
+    measurementId: "G-BYF0XXJZBH"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script></body></html>`,
 
 chemistry:LAB_HEAD+`
 <h1>🧪 pH Lab</h1><p>Add acid (HCl) or base (NaOH) to 50 mL of water that has universal indicator in it. Watch the colour and the pH change!</p>
